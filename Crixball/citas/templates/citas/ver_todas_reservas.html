@@ -1,0 +1,254 @@
+{% extends 'header.html' %}
+{% block content %}
+{% include 'chat_bubble.html' %}
+{% load static %}
+<style>
+    .reservas-list {
+        max-width: 1200px;
+        margin: 20px auto;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .reserva-item {
+        border-bottom: 1px solid #ccc;
+        padding: 15px;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .reserva-item:hover {
+        background-color: #eaeaea;
+    }
+
+    .reserva-item h3 {
+        font-size: 18px;
+        color: #4D0686;
+        margin: 0;
+    }
+
+    .reserva-item p {
+        font-size: 14px;
+        margin: 0;
+        color: #555;
+    }
+
+    .reserva-item .estado {
+        font-weight: bold;
+        text-transform: uppercase;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+
+    .estado-pendiente {
+        background-color: orange;
+        color: white;
+    }
+
+    .estado-confirmada {
+        background-color: green;
+        color: white;
+    }
+
+    .estado-rechazada {
+        background-color: red;
+        color: white;
+    }
+
+    .reserva-details {
+        display: none;
+        padding: 15px;
+        background-color: #fff;
+        border-top: 1px solid #ccc;
+    }
+
+    .reserva-details p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .btn-container {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-accion {
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
+
+    .btn-confirmar {
+        background-color: green;
+    }
+
+    .btn-rechazar {
+        background-color: red;
+    }
+
+    .btn-eliminar {
+        background-color: gray;
+    }
+
+    .reserva-image {
+        max-width: 150px;
+        max-height: 150px;
+        margin-right: 15px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .estado-eliminada {
+    background-color: #dc3545;
+    color: white;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.estado-eliminada:hover {
+    background-color: #c82333;
+}
+
+</style>
+
+<h2 class="text-center my-4">Gestión de Todas las Reservas</h2>
+
+<div class="reservas-list">
+    {% if reservas %}
+        {% for reserva in reservas %}
+        <div class="reserva-item" id="reserva-{{ reserva.id_reserva }}" onclick="toggleDetails({{ reserva.id_reserva }})">
+            <div>
+                <h3>Reserva #{{ reserva.id_reserva }}</h3>
+                <p>{{ reserva.ci.apellido }}, {{ reserva.ci.nombre }}</p>
+                <p><strong>Producto:</strong> {{ reserva.id_pro.nombre_pro }}</p>
+            </div>
+            <div style="display: flex; align-items: center;">
+                {% if reserva.estado_reserva == "Pendiente" %}
+                    <span class="estado estado-pendiente">Pendiente</span>
+                {% elif reserva.estado_reserva == "Confirmada" %}
+                    <span class="estado estado-confirmada">Confirmada</span>
+                {% elif reserva.estado_reserva == "Rechazada" %}
+                    <span class="estado estado-rechazada">Rechazada</span>
+                {% endif %}
+                <form method="POST" action="{% url 'eliminar_reserva' reserva.id_reserva %}" id="form-eliminar-{{ reserva.id_reserva }}">
+                    {% csrf_token %}
+                    <span class="estado estado-eliminada" onclick="confirmarEliminacion('{{ reserva.id_reserva }}')">Eliminar</span>
+                </form>            </div>
+        </div>
+        <div class="reserva-details" id="details-{{ reserva.id_reserva }}">
+            <div style="display: flex; align-items: center;">
+                {% if reserva.id_pro.imagen_pro %}
+                    <img src="{{ reserva.id_pro.imagen_pro.url }}" alt="{{ reserva.id_pro.nombre_pro }}" class="reserva-image">
+                {% endif %}
+                <div>
+                    <p><strong>Talla:</strong> {{ reserva.talla.talla }}</p>
+                    <p><strong>Precio Unitario:</strong> 
+                        {% if reserva.precio_talla %}
+                            ${{ reserva.precio_talla }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </p>
+                    <p><strong>Cantidad Reservada:</strong> {{ reserva.cantidad_reservada }}</p>
+                    <p><strong>Total:</strong> 
+                        {% if reserva.total_reserva %}
+                            ${{ reserva.total_reserva|floatformat:2 }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </p>                    <p><strong>Fecha:</strong> {{ reserva.date_reserva }}</p>
+                    <p><strong>Hora:</strong> {{ reserva.hora_reserva|date:"h:i A" }}</p>
+                    <p><strong>Comentario:</strong> {{ reserva.comentario|default:"Sin comentarios" }}</p>
+                </div>
+            </div>
+            <div class="btn-container">
+                {% if reserva.estado_reserva == "Pendiente" %}
+                <form method="POST" id="form-{{ reserva.id_reserva }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="reserva_id" value="{{ reserva.id_reserva }}">
+                    <button type="button" class="btn-accion btn-confirmar" onclick="confirmarAccion('{{ reserva.id_reserva }}', 'confirmar')">Confirmar</button>
+                </form>
+                <form method="POST" id="form-{{ reserva.id_reserva }}-rechazar">
+                    {% csrf_token %}
+                    <input type="hidden" name="reserva_id" value="{{ reserva.id_reserva }}">
+                    <button type="button" class="btn-accion btn-rechazar" onclick="confirmarAccion('{{ reserva.id_reserva }}', 'rechazar')">Rechazar</button>
+                </form>
+                {% else %}
+                <button type="button" class="btn-accion btn-eliminar" onclick="eliminarFila('{{ reserva.id_reserva }}')">Eliminar</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; color: gray;">No hay reservas registradas.</p>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const reservasEliminadas = JSON.parse(localStorage.getItem('reservasEliminadas')) || [];
+        reservasEliminadas.forEach(function (reservaId) {
+            const reservaItem = document.getElementById(`reserva-${reservaId}`);
+            const reservaDetails = document.getElementById(`details-${reservaId}`);
+            if (reservaItem) reservaItem.style.display = 'none';
+            if (reservaDetails) reservaDetails.style.display = 'none';
+        });
+    });
+
+    function toggleDetails(reservaId) {
+        const details = document.getElementById(`details-${reservaId}`);
+        if (details.style.display === 'none' || details.style.display === '') {
+            details.style.display = 'block';
+        } else {
+            details.style.display = 'none';
+        }
+    }
+
+    function confirmarAccion(reservaId, accion) {
+        const mensaje = accion === 'confirmar' 
+            ? "¿Estás seguro de que deseas confirmar esta reserva?" 
+            : "¿Estás seguro de que deseas rechazar esta reserva?";
+        if (confirm(mensaje)) {
+            const form = document.getElementById(`form-${reservaId}`);
+            const accionInput = document.createElement("input");
+            accionInput.type = "hidden";
+            accionInput.name = "accion";
+            accionInput.value = accion;
+            form.appendChild(accionInput);
+            form.submit();
+        }
+    }
+
+    function eliminarFila(reservaId) {
+        if (confirm("¿Estás seguro de que deseas eliminar esta reserva de la interfaz?")) {
+            const reservaItem = document.getElementById(`reserva-${reservaId}`);
+            const reservaDetails = document.getElementById(`details-${reservaId}`);
+            if (reservaItem) reservaItem.style.display = 'none';
+            if (reservaDetails) reservaDetails.style.display = 'none';
+
+            const reservasEliminadas = JSON.parse(localStorage.getItem('reservasEliminadas')) || [];
+            if (!reservasEliminadas.includes(reservaId)) {
+                reservasEliminadas.push(reservaId);
+                localStorage.setItem('reservasEliminadas', JSON.stringify(reservasEliminadas));
+            }
+        }
+    }
+    function confirmarEliminacion(reservaId) {
+    if (confirm("¿Estás seguro de que deseas eliminar esta reserva? Esta acción no se puede deshacer.")) {
+        document.getElementById(`form-eliminar-${reservaId}`).submit();
+    }
+}
+
+</script>
+{% endblock %}

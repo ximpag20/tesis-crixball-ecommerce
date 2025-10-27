@@ -1,0 +1,241 @@
+{% extends 'header.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'chat_bubble.html' %}
+<style>
+    select.form-control {
+        height: 40px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+        background-color: #fff;
+        color: #000;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    select.form-control:focus {
+        outline: none;
+        border-color: #000;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+</style>
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Administrar Productos</h2>
+
+    <form method="POST" enctype="multipart/form-data" class="p-4 rounded shadow" style="background-color: #fff; max-width: 600px; margin: 0 auto;">
+        {% if success_message %}
+        <div class="alert alert-success text-center" role="alert">
+            {{ success_message }}
+        </div>
+        {% endif %}
+        {% if error_message %}
+        <div class="alert alert-danger text-center" role="alert">
+            {{ error_message }}
+        </div>
+        {% endif %}
+
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="nombre_pro" class="form-label fw-bold">Nombre del Producto</label>
+            {{ form.nombre_pro }}
+        </div>
+        
+        <div class="mb-3">
+            <label for="id_rama" class="form-label fw-bold">Tipo</label>
+            {{ form.id_rama }}
+        </div>
+        
+        <div class="mb-3">
+            <label for="tallas" class="form-label fw-bold">Selecciona las tallas disponibles</label>
+            <div class="d-flex flex-wrap gap-2">
+                {% for checkbox in form.tallas %}
+                <div class="form-check form-check-inline">
+                    {{ checkbox.tag }}
+                    <label class="form-check-label">{{ checkbox.choice_label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Campos dinámicos para precio y cantidad -->
+        <div id="dynamic-fields" class="mb-3">
+            <label class="form-label fw-bold">Precio</label>
+            <div id="price-fields"></div>
+            <label class="form-label fw-bold mt-3">Cantidad Disponible</label>
+            <div id="quantity-fields"></div>
+        </div>
+
+        <div class="mb-3">
+            <label for="detalle_pro" class="form-label fw-bold">Detalle</label>
+            {{ form.detalle_pro }}
+        </div>
+
+        <div class="upload-container mb-3 text-center">
+            <div id="drop-zone" class="p-4 border rounded" style="background-color: #f8f9fa; border: 2px dashed #ccc; position: relative;">
+                <img src="https://img.icons8.com/ios/50/000000/upload--v1.png" alt="Upload Icon" style="width: 50px; margin-bottom: 10px;">
+                <p class="mb-2">Arrastra y suelta tu imagen aquí</p>
+                <p class="text-muted small">o</p>
+                <label for="file-input" class="btn btn-outline-dark">Seleccionar Imagen</label>
+                <input type="file" id="file-input" name="imagen_pro" accept="image/*" class="d-none">
+            </div>
+            <div id="preview-container" class="position-relative mt-3" style="max-width: 200px; margin: 0 auto; display: none;">
+                <img id="preview" class="img-fluid rounded mx-auto d-block" style="max-width: 100%;">
+                <button id="remove-btn" type="button" class="btn btn-sm btn-danger position-absolute" style="top: -10px; right: -10px; border-radius: 50%;">&times;</button>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-dark w-100">Guardar Producto</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const tallasCheckboxes = document.querySelectorAll("input[name='tallas']");
+    const priceFieldsContainer = document.getElementById("price-fields");
+    const quantityFieldsContainer = document.getElementById("quantity-fields");
+
+    function updateDynamicFields() {
+        priceFieldsContainer.innerHTML = "";
+        quantityFieldsContainer.innerHTML = "";
+
+        tallasCheckboxes.forEach((checkbox) => {
+            if (checkbox.checked) {
+                const talla = checkbox.nextElementSibling.textContent.trim();
+
+                // Crear campo para precio
+                const priceGroup = document.createElement("div");
+                priceGroup.classList.add("mb-3");
+
+                const priceLabel = document.createElement("label");
+                priceLabel.textContent = `Talla (${talla})`;
+                priceLabel.classList.add("form-label", "fw-bold");
+
+                const inputGroup = document.createElement("div");
+                inputGroup.classList.add("input-group");
+
+                const dollarSymbol = document.createElement("span");
+                dollarSymbol.classList.add("input-group-text");
+                dollarSymbol.textContent = "$";
+
+                const priceInput = document.createElement("input");
+                priceInput.type = "text";
+                priceInput.name = `precio_${talla}`;
+                priceInput.classList.add("form-control");
+                priceInput.placeholder = `0.00`;
+                priceInput.onblur = formatPriceOnBlur;
+                priceInput.oninput = validateInput;
+
+                const priceHint = document.createElement("small");
+                priceHint.classList.add("text-muted");
+                priceHint.textContent = "Ingresa el precio en formato estadounidense (ejemplo: 12.34).";
+
+                inputGroup.appendChild(dollarSymbol);
+                inputGroup.appendChild(priceInput);
+                priceGroup.appendChild(priceLabel);
+                priceGroup.appendChild(inputGroup);
+                priceGroup.appendChild(priceHint);
+                priceFieldsContainer.appendChild(priceGroup);
+
+                // Crear campo para cantidad
+                const qtyGroup = document.createElement("div");
+                qtyGroup.classList.add("mb-3");
+
+                const qtyLabel = document.createElement("label");
+                qtyLabel.textContent = `Talla (${talla})`;
+                qtyLabel.classList.add("form-label", "fw-bold");
+
+                const qtyInput = document.createElement("input");
+                qtyInput.type = "number";
+                qtyInput.name = `cantidad_${talla}`;
+                qtyInput.classList.add("form-control");
+                qtyInput.placeholder = `Cantidad para ${talla}`;
+                qtyInput.min = 0;
+
+                qtyGroup.appendChild(qtyLabel);
+                qtyGroup.appendChild(qtyInput);
+                quantityFieldsContainer.appendChild(qtyGroup);
+            }
+        });
+    }
+
+    tallasCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener("change", updateDynamicFields);
+    });
+
+    updateDynamicFields();
+});
+
+// Validar solo números y un único punto durante la entrada
+function validateInput(event) {
+    const input = event.target;
+    input.value = input.value.replace(/[^0-9.]/g, ""); // Permitir solo números y un punto
+}
+
+// Formatear el valor a 2 decimales al salir del campo
+function formatPriceOnBlur(event) {
+    const input = event.target;
+    let value = input.value;
+
+    if (value === "") return;
+
+    const formattedValue = parseFloat(value).toFixed(2);
+    input.value = isNaN(formattedValue) ? "" : formattedValue;
+}
+
+// Scripts para carga de imágenes
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("file-input");
+const preview = document.getElementById("preview");
+const previewContainer = document.getElementById("preview-container");
+const removeBtn = document.getElementById("remove-btn");
+
+dropZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    dropZone.style.borderColor = "#000";
+});
+
+dropZone.addEventListener("dragleave", () => {
+    dropZone.style.borderColor = "#ccc";
+});
+
+dropZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dropZone.style.borderColor = "#ccc";
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+        fileInput.files = event.dataTransfer.files;
+        previewImage(file);
+    }
+});
+
+fileInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith("image/")) {
+        previewImage(file);
+    }
+});
+
+removeBtn.addEventListener("click", () => {
+    preview.src = "";
+    previewContainer.style.display = "none";
+    dropZone.classList.remove("d-none");
+    fileInput.value = "";
+});
+
+function previewImage(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        preview.src = event.target.result;
+        previewContainer.style.display = "block";
+        dropZone.classList.add("d-none");
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+
+<br><br>
+{% endblock %}

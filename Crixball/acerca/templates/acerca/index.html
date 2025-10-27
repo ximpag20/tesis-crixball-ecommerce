@@ -1,0 +1,239 @@
+{% extends 'header.html' %}
+
+{% load static %}
+
+{% block content %}
+
+{% include 'chat_bubble.html' %}
+<style>
+    .team img {
+        width: 100%;
+        height: 320px; /* puedes ajustar esto según tu preferencia visual */
+        object-fit: cover; /* recorta sin deformar */
+        object-position: top center; /* muestra el rostro/cabeza si es retrato */
+    }
+
+    @media (max-width: 992px) {
+        .team img {
+            height: 280px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .team img {
+            height: 240px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .team img {
+            height: 200px;
+        }
+    }
+</style>
+
+<body>
+        <!-- About Start -->
+        <div class="container-fluid py-5">
+            <div class="container py-1">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 pb-5 pb-lg-0">
+                        <img class="img-fluid w-100" src="{% static 'img/local2.jpeg' %}" alt="Imagen de propietarios" title="Propietarios" onclick="openImagePreview(this.src)">                </div>
+                    <div class="col-lg-6">
+                        <h6 class="d-inline-block text-primary text-uppercase bg-light py-1 px-2">Acerca de nosotros</h6>
+                        <h1 class="mb-4" style="text-align: justify;">Confecciones & Textiles Crixball</h1>
+                        <p class="pl-4 border-left border-primary" style="text-align: justify;">Negocio local ubicado en la ciudad de Ambato, parroquia Santa Rosa entre las calles Venezuela y Neptali Sancho a media cuadra del cementerio. Se confecciona todo tipo de ropa deportiva : sublimados, uniformes para clubs, escuelas y más.</p>
+                        <div class="row pt-3">
+                            <div class="col-6">
+                                <div class="bg-light text-center p-4">
+                                    <h3 class="display-4 text-primary" data-toggle="counter-up">{{ visit_count }}</h3>
+                                    <h6 class="text-uppercase">Visitas al Sitio</h6>
+                                </div>                                
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light text-center p-4">
+                                    <h3 class="display-4 text-primary" data-toggle="counter-up">{{ cantidad_usuarios }}</h3>
+                                    <h6 class="text-uppercase"> Nuestros Clientes</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- About End -->
+
+     <!-- About Start -->
+     <div class="container-fluid py-5">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="mb-4" style="text-align: center;">Nuestra Misión Empresarial</h1>
+                    <p class="pl-4 border-left border-primary" style="text-align: justify">Ser la empresa con los más altos estándares de calidad y servicio en equipos y material deportivo para beneficio del deporte, los deportistas y nuestros clientes, ofreciendo alternativas para solucionar sus necesidades.
+                    </p>
+                </div>
+                <div class="col-lg-6 pb-5 pb-lg-0">
+                    <img class="img-fluid w-100" src="{% static 'img/Equipo1.jpeg' %}" alt="">
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    <!-- About End -->
+
+      <!-- About Start -->
+      <div class="container-fluid py-5">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-6 pb-5 pb-lg-0">
+                    <img class="img-fluid w-100" src="{% static 'img/Equipo2.jpeg' %}" alt="">
+                </div>
+                <div class="col-lg-6">
+                    <h1 class="mb-4" style="text-align: center;">Nuestra Visión Empresarial</h1>
+                    <p class="pl-4 border-left border-primary" style="text-align: justify">Para el año 2025 nos proponemos que Crixball sea  reconocida a nivel Nacional tanto por los productos de buena calidad asi como de una excelente  atención al cliente.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- About End -->
+
+    <!-- Team Start -->
+    <div class="container-fluid py-1">
+        <div class="container pt-5">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-6">
+                    <h6 class="d-inline-block bg-light text-primary text-uppercase py-1 px-2">Equipo Crixball</h6>
+                    <h1 class="mb-5">Equipo en Sastrería & Confección</h1>
+                </div>
+            </div>
+            <div class="row justify-content-center" >
+                <div class="col-lg-3 col-md-6">
+                    <div class="team position-relative overflow-hidden mb-5">
+                        <img class="img-fluid" src="{% static 'img/gerente.jpeg' %}" alt="">
+                        <div class="position-relative text-center">
+                            <div class="team-text bg-primary text-white">
+                                <h5 class="text-white text-uppercase">Margoth Rivera</h5>
+                                <p class="m-0">Gerente propietario</p>
+                            </div>
+                            <div class="team-social bg-dark text-center">
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="team position-relative overflow-hidden mb-5">
+                        <img class="img-fluid" src="{% static 'img/jefe.jpeg' %}" alt="">
+                        <div class="position-relative text-center">
+                            <div class="team-text bg-primary text-white">
+                                <h5 class="text-white text-uppercase">Juan Chango</h5>
+                                <p class="m-0">Jefe de Personal</p>
+                            </div>
+                            <div class="team-social bg-dark text-center">
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="team position-relative overflow-hidden mb-5">
+                        <img class="img-fluid" src="{% static 'img/disenador.jpeg' %}" alt="">
+                        <div class="position-relative text-center">
+                            <div class="team-text bg-primary text-white">
+                                <h5 class="text-white text-uppercase">Andrés Yunapanta</h5>
+                                <p class="m-0">Diseñador</p>
+                            </div>
+                            <div class="team-social bg-dark text-center">
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="team position-relative overflow-hidden mb-5">
+                        <img class="img-fluid" src="{% static 'img/obrera.jpeg' %}" alt="">
+                        <div class="position-relative text-center">
+                            <div class="team-text bg-primary text-white">
+                                <h5 class="text-white text-uppercase">Verónica Poaquiza</h5>
+                                <p class="m-0">Obrera</p>
+                            </div>
+                            <div class="team-social bg-dark text-center">
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                    <!-- Maquiladoras -->
+                    <div class="col-lg-3 col-md-6 mb-5">
+                        <div class="team position-relative overflow-hidden">
+                            <img class="img-fluid" src="{% static 'img/maquiladora1.jpeg' %}" alt="">
+                            <div class="position-relative text-center">
+                                <div class="team-text bg-primary text-white">
+                                    <h5 class="text-white text-uppercase">Mercy Medina</h5>
+                                    <p class="m-0">Maquiladora</p>
+                                </div>
+                                <div class="team-social bg-dark text-center">
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                    <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-5">
+                        <div class="team position-relative overflow-hidden">
+                            <img class="img-fluid" src="{% static 'img/team-4.jpg' %}" alt="">
+                            <div class="position-relative text-center">
+                                <div class="team-text bg-primary text-white">
+                                    <h5 class="text-white text-uppercase">Mayra Bayas</h5>
+                                    <p class="m-0">Maquiladora</p>
+                                </div>
+                                <div class="team-social bg-dark text-center">
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                    <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-5">
+                        <div class="team position-relative overflow-hidden">
+                            <img class="img-fluid" src="{% static 'img/maquiladora3.jpeg' %}" alt="">
+                            <div class="position-relative text-center">
+                                <div class="team-text bg-primary text-white">
+                                    <h5 class="text-white text-uppercase">Gladys Freire</h5>
+                                    <p class="m-0">Maquiladora</p>
+                                </div>
+                                <div class="team-social bg-dark text-center">
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                                    <a class="btn btn-outline-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                                    <a class="btn btn-outline-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                
+            </div>
+        </div>
+    </div>
+    <!-- Team End -->
+{% endblock %}

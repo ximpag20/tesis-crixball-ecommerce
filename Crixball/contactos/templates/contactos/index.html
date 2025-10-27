@@ -1,0 +1,144 @@
+{% extends 'header.html' %}
+
+{% block content %}
+{% include 'chat_bubble.html' %}
+<!-- Contact Start -->
+<div class="container py-5">
+    <div class="row align-items-center mb-5">
+        <!-- Información de contacto -->
+        <div class="col-lg-6">
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-dark mb-4">Contáctenos</h2>
+                <p>Estamos aquí para ayudarte y responder a cualquier pregunta que puedas tener.</p>
+                <p class="d-flex align-items-center">
+                    <i class="fas fa-map-marker-alt text-dark mr-3" style="width: 20px;"></i>
+                    <span><strong>Dirección:</strong> Ambato, Santa Rosa</span>
+                </p>
+                <p class="d-flex align-items-center">
+                    <i class="fas fa-phone-alt text-dark mr-3" style="width: 20px;"></i>
+                    <span><strong>Teléfono:</strong> +593 99 703 0796</span>
+                </p>
+                <p class="d-flex align-items-center">
+                    <i class="fas fa-envelope text-dark mr-3" style="width: 20px;"></i>
+                    <span><strong>Email:</strong> <a href="mailto:crixball@hotmail.com" class="text-dark">crixball@hotmail.com</a></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Mapa Interactivo -->
+        <div class="col-lg-6">
+            <div id="map" style="width: 100%; height: 400px;" class="rounded shadow"></div>
+        </div>
+    </div>
+
+    <!-- Segunda fila: Componentes debajo -->
+    <div class="row text-center">
+        <div class="col-lg-4 d-flex">
+            <div class="bg-white p-4 rounded shadow w-100 d-flex flex-column justify-content-between">
+                <h3 class="text-dark">Reservar un producto</h3>
+                <p>Explora nuestro amplio catálogo y realiza reservas fácilmente para asegurar el producto que necesitas.</p>
+                {% if request.session.correo_usuario %}
+                <a href="{% url 'Citas' %}" class="btn btn-dark py-2 px-4 mt-3">Haga clic aquí</a>
+                {% else %}
+                <a href="#" data-toggle="modal" data-target="#loginModal" class="btn btn-dark py-2 px-4 mt-3">Haga clic aquí</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-4 d-flex">
+            <div class="bg-white p-4 rounded shadow w-100 d-flex flex-column justify-content-between">
+                <h3 class="text-dark">Centro de ayuda al cliente</h3>
+                <p>Obtenga respuestas instantáneas a preguntas comunes y consulte con nuestro asistente conversacional.</p>
+                {% if request.session.correo_usuario %}
+                <a href="" class="btn btn-dark py-2 px-4 mt-3">Haga clic aquí</a>
+                {% else %}
+                <a href="#" data-toggle="modal" data-target="#loginModal" class="btn btn-dark py-2 px-4 mt-3">Haga clic aquí</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-4 d-flex">
+            <div class="bg-white p-4 rounded shadow w-100 d-flex flex-column justify-content-between">
+                <h3 class="text-dark">Comparte tus comentarios</h3>
+                <p>Tu opinión es importante. Comparte tus ideas y sugerencias para ayudarnos a mejorar continuamente.</p>
+                {% if request.session.correo_usuario %}
+                    <a href="{% url 'comentarios' %}" class="btn btn-dark py-2 px-4 mt-3">Haga clic aquí</a>
+                {% else %}
+                    <a href="#" data-toggle="modal" data-target="#loginModal" class="btn btn-dark py-2 px-4 mt-3">Haga clic aquí</a>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+</div>
+<!-- Contact End -->
+
+<!-- Google Maps API -->
+<script async
+    src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap">
+</script>
+
+<script>
+    function initMap() {
+        // Crear el mapa centrado inicialmente en una ubicación por defecto
+        const defaultLocation = { lat: -1.2806498430286823, lng: -78.66587207185505 };
+        const map = new google.maps.Map(document.getElementById('map'), {
+            center: defaultLocation,
+            zoom: 12,
+        });
+
+        // Configuración del destino
+        const destination = { lat: -1.2806498430286823, lng: -78.66587207185505 };
+
+        // Crear un servicio de Directions
+        const directionsService = new google.maps.DirectionsService();
+        const directionsRenderer = new google.maps.DirectionsRenderer();
+        directionsRenderer.setMap(map);
+
+        // Intentar obtener la ubicación actual del usuario
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Obtener las coordenadas del usuario
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    };
+
+                    // Mover el mapa a la ubicación actual del usuario
+                    map.setCenter(userLocation);
+                    map.setZoom(12);
+
+                    // Solicitar la ruta entre la ubicación del usuario y el destino
+                    directionsService.route(
+                        {
+                            origin: userLocation,
+                            destination: destination,
+                            travelMode: google.maps.TravelMode.DRIVING,
+                        },
+                        (result, status) => {
+                            if (status === google.maps.DirectionsStatus.OK) {
+                                // Mostrar la ruta en el mapa
+                                directionsRenderer.setDirections(result);
+                            } else {
+                                alert('No se pudo trazar la ruta: ' + status);
+                                console.error('Error en DirectionsService:', status);
+                            }
+                        }
+                    );
+                },
+                (error) => {
+                    // Manejo de errores específicos
+                    console.error("Error al obtener la ubicación del usuario:", error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0,
+                }
+            );
+        } else {
+            console.error("Geolocalización no es compatible con este navegador.");
+        }
+    }
+</script>
+
+{% endblock %}

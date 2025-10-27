@@ -1,0 +1,514 @@
+{% extends 'header.html' %}
+{% load static %}
+{% block content %}
+{% include 'chat_bubble.html' %}
+<style>
+    /* Encapsular estilos dentro del modal */
+    #productoModal {
+        /* Ajustes básicos del modal */
+        .modal-xl {
+            max-width: 90%; /* Ampliar el modal */
+        }
+    
+        .modal-content {
+            max-width: 90%; /* Asegúrate de que no ocupe toda la pantalla */
+            margin: auto;
+            border-radius: 15px; /* Bordes redondeados */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Sombra suave */
+
+        }
+    
+        .modal-body {
+            padding: 1.5rem; /* Espaciado interno */
+            background-color: #f9f9f9; /* Fondo claro */
+            max-height: 70vh; /* Establece una altura máxima relativa a la ventana */
+            overflow-y: auto;
+        }
+    
+        /* Contenedor de tarjetas */
+        .row {
+            display: flex;
+            flex-wrap: wrap; /* Ajustar las tarjetas automáticamente */
+            gap: 1rem; /* Espaciado entre tarjetas */
+            justify-content: center; /* Centrar las tarjetas */
+        }
+    
+        .col {
+            flex: 1 1 calc(25% - 1rem); /* Mostrar 4 tarjetas por fila */
+            max-width: calc(25% - 1rem);
+            box-sizing: border-box; /* Evitar problemas de ancho */
+        }
+    
+        /* Ajustar para pantallas pequeñas */
+        @media (max-width: 768px) {
+            .col {
+                flex: 1 1 calc(50% - 1rem); /* Mostrar 2 tarjetas por fila en móviles */
+                max-width: calc(50% - 1rem);
+            }
+        }
+    
+        @media (max-width: 576px) {
+            .col {
+                flex: 1 1 100%; /* Mostrar 1 tarjeta por fila en pantallas muy pequeñas */
+                max-width: 100%;
+            }
+        }
+    
+        /* Estilo de las tarjetas */
+        .card {
+            border: none;
+            border-radius: 10px;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            height: 100%; /* Asegurar que todas las tarjetas tengan la misma altura */
+        }
+    
+        .card-img-top {
+            height: 150px; /* Ajustar altura fija */
+            object-fit: contain; /* Evitar distorsión de las imágenes */
+            border-bottom: 1px solid #ddd;
+        }
+    
+        .card-body {
+            text-align: center; /* Centrar el contenido */
+        }
+    
+        .card-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+    
+        .card-text {
+            font-size: 0.9rem;
+            color: #555;
+        }
+    
+        .badge {
+            font-size: 0.9rem;
+            padding: 0.5em 0.7em;
+            border-radius: 12px;
+            background-color: #007bff;
+            color: #fff;
+        }
+    
+        .btn-outline-primary {
+            border-color: #007bff;
+            color: #007bff;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+    
+        .btn-outline-primary:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+    }
+
+    /* Separar los radio buttons */
+#tallas-container .form-check {
+    margin-right: 1rem; /* Espacio entre radios */
+    margin-bottom: 0.5rem; /* Espacio vertical */
+}
+
+/* Estilo del header del modal */
+.modal-header {
+    position: relative;
+    padding: 1rem;
+}
+
+/* Estilo del título del modal */
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    margin: 0;
+}
+
+/* Estilo de la "X" para cerrar */
+.close-modal-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 5px;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+
+.close-modal-btn:hover {
+    opacity: 1;
+}
+    </style>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Reservar Producto</h1>
+    
+        <div class="card shadow-lg border-0 rounded-3" style="max-width: 600px; margin: auto; background-color: #fff; color: #000;">
+            
+            <div class="card-body p-5">
+                {% if messages %}
+                <div>
+                    {% for message in messages %}
+                        {% if 'success' in message.tags %}
+                            <div class="alert alert-success">{{ message }}</div>
+                        {% elif 'error' in message.tags or 'danger' in message.tags %}
+                            <div class="alert alert-danger">{{ message }}</div>
+                        {% elif 'warning' in message.tags %}
+                            <div class="alert alert-warning">{{ message }}</div>
+                        {% else %}
+                            <div class="alert alert-info">{{ message }}</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_pro" class="form-label">Selecciona el Producto</label>
+                        <button type="button" id="open-modal" class="btn btn-dark w-100">Seleccionar Producto</button>
+                        <input type="hidden" id="id_pro" name="id_pro" value="{% if request.GET.producto_id %}{{ request.GET.producto_id }}{% elif producto_seleccionado %}{{ producto_seleccionado.id_pro }}{% else %}undefined{% endif %}">
+                    </div>
+    
+<!-- Caso en que ya hay un producto seleccionado -->
+{% if producto_seleccionado %}
+    <div id="preview-container" class="text-center mb-4">
+        <div class="card mx-auto" style="max-width: 300px;">
+            <img id="preview-image" class="card-img-top" src="{{ producto_seleccionado.imagen_pro.url }}" alt="Producto seleccionado">
+            <div class="card-body">
+                <h5 id="preview-name" class="card-title">{{ producto_seleccionado.nombre_pro }}</h5>
+                <p id="preview-tallas" class="card-text">
+                    Tallas disponibles:
+                    {% for talla in producto_seleccionado.producto_tallas.all %}
+                        {{ talla.talla.talla }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+<!-- Caso en que no se ha seleccionado un producto -->
+{% else %}
+<div id="preview-container" class="text-center mb-4" style="display: none;">
+    <div class="card mx-auto" style="max-width: 300px;">
+        <img id="preview-image" class="card-img-top" src="" alt="Producto seleccionado">
+        <div class="card-body">
+            <h5 id="preview-name" class="card-title"></h5>
+            <p id="preview-tallas" class="card-text"></p>
+            <small id="preview-cantidad" class="text-muted"></small>
+        </div>
+    </div>
+</div>
+{% endif %}
+    
+ <div class="modal fade" id="productoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header d-flex justify-content-between align-items-center">
+                <h5 class="modal-title w-100 text-center">Seleccionar Producto</h5>
+                <!-- Botón de cierre manual -->
+                <span id="close-modal" class="close-modal-btn" aria-label="Close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="container py-3">
+                    <div class="row row-cols-1 row-cols-md-4 g-4">
+                        {% for producto in productos %}
+                        <div class="col">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <img src="{{ producto.imagen_pro.url }}" class="card-img-top img-fluid p-3" alt="{{ producto.nombre_pro }}" style="height: 180px; object-fit: contain;">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title text-truncate">{{ producto.nombre_pro }}</h5>
+                                    <p class="card-text">Tallas disponibles:</p>
+                                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                                        {% for producto_talla in producto.producto_tallas.all %}
+                                            <span class="badge bg-primary text-light">{{ producto_talla.talla.talla }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    <button class="btn btn-outline-primary seleccionar-producto"
+                                    data-id="{{ producto.id_pro }}"
+                                    data-tallas="{% for producto_talla in producto.producto_tallas.all %}{{ producto_talla.talla.talla }}, {% endfor %}"
+                                    data-cantidad="{{ producto.producto_tallas.all.0.cantidad_disponible }}"
+                                    {% for producto_talla in producto.producto_tallas.all %}
+                                    data-cantidad_{{ producto_talla.talla.talla }}="{{ producto_talla.cantidad_disponible }}"
+                                    {% endfor %}
+                                >
+                                    Seleccionar
+                                </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+                    <div class="mb-3">
+                        <label class="form-label">Selecciona la Talla</label>
+                        <div id="tallas-container" class="d-flex flex-wrap gap-2" style="opacity: 0.5; pointer-events: none;">
+                            <!-- Los radio buttons para tallas se generarán dinámicamente -->
+                        </div>
+                        <small id="cantidad-disponible" class="text-muted" style="display: none;">Cantidad disponible: </small>
+                    </div>
+    
+                    <div class="mb-3">
+                        <label for="cantidad_reservada" class="form-label">Cantidad a Reservar</label>
+                        <input type="number" id="cantidad_reservada" name="cantidad_reservada" class="form-control" disabled required>
+                    </div>
+    
+                    <div class="mb-3">
+                        <label for="date_reserva" class="form-label">Fecha de la Reserva</label>
+                        <input type="date" id="date_reserva" name="date_reserva" class="form-control" required>
+                    </div>
+    
+                    <div class="mb-3">
+                        <label for="hora_reserva" class="form-label">Hora de la Atención</label>
+                        <input type="time" id="hora_reserva" name="hora_reserva" class="form-control" required>
+                        <div id="error-hora" class="text-danger mt-1" style="display:none;"><small>Ya existe una reserva para esta fecha y hora.</small></div>
+                        {% for error in form.hora_reserva.errors %}
+                        <small style="color: red;">{{ error }}</small><br>
+                        {% endfor %}
+                    </div>
+    
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label">Comentarios (Opcional)</label>
+                        <textarea id="comentario" name="comentario" class="form-control" rows="4"></textarea>
+                    </div>
+    
+                    <button type="submit" class="btn btn-dark w-100">Reservar Producto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const productoId = urlParams.get('producto_id');
+
+    if (productoId) {
+        // Establecer el producto_id en el campo oculto
+        const productoInput = document.getElementById('id_pro');
+        if (productoInput) {
+            productoInput.value = productoId;
+            console.log("Producto ID transferido:", productoId); // Depuración
+        }
+
+        // Limpiar la URL después de capturar el producto_id
+        history.replaceState(null, '', window.location.pathname);
+    }
+});
+
+</script>
+
+<script>        
+ document.addEventListener('DOMContentLoaded', () => {
+    // Variables generales
+    const modal = document.getElementById('productoModal');
+    const openModalButton = document.getElementById('open-modal');
+    const productoInput = document.getElementById('id_pro');
+    const tallasContainer = document.getElementById('tallas-container');
+    const cantidadReservada = document.getElementById('cantidad_reservada');
+    const cantidadDisponibleLabel = document.getElementById('cantidad-disponible');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+    const previewName = document.getElementById('preview-name');
+    const previewTallas = document.getElementById('preview-tallas');
+
+    /**
+     * Función para cargar la vista previa del producto
+     */
+    function cargarProducto(productoId, nombreProducto, imagenProducto, tallas, cantidades) {
+        // Actualizar el campo oculto con el ID del producto seleccionado
+        productoInput.value = productoId;
+        console.log("Producto seleccionado (ID):", productoId);
+
+        // Actualizar la vista previa
+        previewImage.src = imagenProducto;
+        previewName.textContent = nombreProducto;
+        previewTallas.textContent = `Tallas disponibles: ${tallas.join(', ')}`;
+        previewContainer.style.display = 'block';
+
+        // Limpiar y cargar las opciones de tallas
+        tallasContainer.innerHTML = '';
+        tallas.forEach((talla, index) => {
+            const radioId = `talla-${index}`;
+            const radioWrapper = document.createElement('div');
+            radioWrapper.className = 'form-check';
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.className = 'form-check-input';
+            radio.id = radioId;
+            radio.name = 'talla';
+            radio.value = talla;
+            radio.required = true;
+            radio.setAttribute('data-cantidad', cantidades[talla]);
+
+            const label = document.createElement('label');
+            label.className = 'form-check-label';
+            label.setAttribute('for', radioId);
+            label.textContent = talla;
+
+            radioWrapper.appendChild(radio);
+            radioWrapper.appendChild(label);
+            tallasContainer.appendChild(radioWrapper);
+        });
+
+        // Habilitar el contenedor de tallas y la cantidad reservada
+        tallasContainer.style.opacity = '1';
+        tallasContainer.style.pointerEvents = 'auto';
+
+        // Seleccionar automáticamente la primera talla disponible
+        const firstRadio = tallasContainer.querySelector('input[type="radio"]');
+        if (firstRadio) {
+            firstRadio.checked = true;
+            cantidadDisponibleLabel.textContent = `Cantidad disponible: ${firstRadio.dataset.cantidad}`;
+            cantidadDisponibleLabel.style.display = 'inline';
+            cantidadReservada.disabled = false;
+            cantidadReservada.max = firstRadio.dataset.cantidad;
+        }
+    }
+
+    /**
+     * Manejo de la selección de producto en el modal
+     */
+    document.querySelectorAll('.seleccionar-producto').forEach(button => {
+        button.addEventListener('click', function () {
+            const productoId = this.dataset.id;
+            if (!productoId) {
+                console.error("El atributo data-id no está definido en el botón.");
+                return;
+            }
+
+            const productoInput = document.getElementById('id_pro');
+            productoInput.value = productoId;
+            console.log("Producto seleccionado (ID):", productoId); // Depuración
+            const tallas = this.dataset.tallas.split(',').map(t => t.trim()).filter(t => t);
+            const nombreProducto = this.closest('.card').querySelector('.card-title').textContent;
+            const imagenProducto = this.closest('.card').querySelector('img').src;
+            const cantidades = {};
+
+            // Extraer las cantidades por talla
+            tallas.forEach(talla => {
+                cantidades[talla] = this.dataset[`cantidad_${talla}`];
+            });
+
+            // Cargar el producto seleccionado en la vista previa
+            cargarProducto(productoId, nombreProducto, imagenProducto, tallas, cantidades);
+
+            // Cerrar el modal
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+    });
+
+    /**
+     * Cambiar cantidad disponible al seleccionar una talla
+     */
+    tallasContainer.addEventListener('change', (e) => {
+        if (e.target.name === 'talla') {
+            const cantidadDisponible = e.target.dataset.cantidad;
+            cantidadDisponibleLabel.textContent = `Cantidad disponible: ${cantidadDisponible}`;
+            cantidadDisponibleLabel.style.display = 'inline';
+            cantidadReservada.disabled = false;
+            cantidadReservada.max = cantidadDisponible;
+        }
+    });
+
+    /**
+     * Validar la cantidad reservada ingresada
+     */
+    cantidadReservada.addEventListener('input', () => {
+        if (parseInt(cantidadReservada.value) > parseInt(cantidadReservada.max)) {
+            alert('La cantidad supera el stock disponible.');
+            cantidadReservada.value = cantidadReservada.max;
+        }
+    });
+
+    /**
+     * Abrir el modal para seleccionar un producto
+     */
+    openModalButton.addEventListener('click', () => {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    });
+
+    /**
+     * Cargar un producto preseleccionado al cargar la página
+     */
+    const productoSeleccionadoId = productoInput.value || new URLSearchParams(window.location.search).get('producto_id');
+    if (productoSeleccionadoId) {
+        fetch(`/catalogo/producto/${productoSeleccionadoId}/`)  // Ajusta según tu endpoint
+            .then(response => response.json())
+            .then(data => {
+                const tallas = data.tallas.map(t => t.talla);
+                const cantidades = Object.fromEntries(
+                    data.tallas.map(t => [t.talla, t.cantidad])
+                );
+                cargarProducto(data.id, data.nombre, data.imagen, tallas, cantidades);
+            })
+            .catch(error => console.error("Error al cargar el producto preseleccionado:", error));
+    }
+});
+
+</script>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('productoModal');
+    const closeModalButton = document.getElementById('close-modal');
+
+    // Manejo del cierre del modal al hacer clic en la "X"
+    closeModalButton.addEventListener('click', () => {
+        modal.classList.remove('show'); // Ocultar el modal
+        modal.style.display = 'none'; // Cambiar el estilo para que no sea visible
+        document.body.style.overflow = ''; // Permitir que la página se desplace
+    });
+});
+</script>
+
+<script>
+    const fechaInput = document.getElementById('date_reserva');
+    const horaInput = document.getElementById('hora_reserva');
+    const errorDiv = document.getElementById('error-hora');
+
+    function verificarDisponibilidad() {
+        const fecha = fechaInput.value;
+        const hora = horaInput.value;
+
+        if (fecha && hora) {
+            fetch("{% url 'verificar_reserva' %}?fecha=" + fecha + "&hora=" + hora)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.existe) {
+                        errorDiv.style.display = 'block';
+                        horaInput.setCustomValidity("Ya existe una reserva para esta hora.");
+                    } else {
+                        errorDiv.style.display = 'none';
+                        horaInput.setCustomValidity("");
+                    }
+                });
+        }
+    }
+
+    fechaInput.addEventListener('change', verificarDisponibilidad);
+    horaInput.addEventListener('change', verificarDisponibilidad);
+</script>
+
+{% endblock %}

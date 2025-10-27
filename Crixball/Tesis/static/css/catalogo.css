@@ -1,0 +1,210 @@
+
+/* Header del catálogo */
+.catalog-header {
+  text-align: center;
+  padding: 20px;
+  background-color: #007bff;
+  color: #fff;
+}
+
+.catalog-header h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.catalog-filters {
+  margin-top: 10px;
+}
+
+.filter-select {
+  padding: 10px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+/* Contenedor del catálogo */
+.catalogo-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Card de producto */
+.producto-card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.producto-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Imagen de producto */
+.producto-image-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.producto-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.producto-image-container:hover .producto-imagen {
+  transform: scale(1.1);
+}
+
+/* Botón de favoritos */
+.favorite-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9); /* Color de fondo blanco semitransparente */
+  border: none;
+  border-radius: 50%; /* Asegura que sea un círculo perfecto */
+  padding: 5px; /* Reduce el tamaño del espacio interno */
+  width: 35px; /* Tamaño uniforme para el botón */
+  height: 35px; /* Tamaño uniforme para el botón */
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.favorite-btn:hover {
+  background-color: #ff6b6b; /* Fondo rojo claro al pasar el mouse */
+  transform: scale(1.1); /* Pequeño aumento al hacer hover */
+}
+
+.favorite-btn i {
+  font-size: 1.2rem; /* Tamaño del ícono */
+  color: #333; /* Color inicial del ícono */
+}
+
+.favorite-btn:hover i {
+  color: white; /* Cambia el color del ícono a blanco en hover */
+}
+
+
+/* Información del producto */
+.producto-info {
+  padding: 15px;
+  text-align: center;
+}
+
+.producto-nombre {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.producto-descripcion {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.producto-precio-rating {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.producto-precio {
+  font-weight: bold;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rating i {
+  color: #ffbf00;
+}
+
+/* Botón Agendar Cita */
+.producto-comprar {
+  padding: 10px 15px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+}
+
+.producto-comprar:hover {
+  background-color: #0056b3;
+}
+
+/* Sin productos */
+.no-products {
+  text-align: center;
+  color: #666;
+  padding: 50px;
+}
+
+.no-products i {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+/* Modal de imagen */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.close-modal {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 2rem;
+  color: #fff;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+  color: #ff6b6b;
+}

@@ -1,0 +1,183 @@
+{% extends 'header.html' %}
+
+{% block content %}
+{% include 'chat_bubble.html' %}
+<div class="container py-5">
+    <!-- Título -->
+    <div class="container py-5">
+        <!-- Título -->
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-dark" style="font-size: 2.5rem; letter-spacing: 0.05rem;">Comparte tus comentarios</h2>
+            <p class="text-muted fs-5" style="max-width: 750px; margin: 0 auto; line-height: 1.8;">
+                Gracias por enviarnos tus ideas, preguntas o comentarios. Aunque no podemos responder de forma individual,
+                los transmitiremos a los equipos que están trabajando para mejorar la experiencia para todos.
+            </p>
+            <p class="text-muted fs-5" style="max-width: 750px; margin: 0 auto; line-height: 1.8;">
+                Si tienes alguna pregunta específica o necesitas ayuda para resolver un problema, visita nuestro
+                <a href="#" class="text-primary fw-semibold">Centro de ayuda</a> o
+                <a href="#" class="text-primary fw-semibold">contáctate con nosotros</a>.
+            </p>
+        </div>
+    </div>
+    
+
+    <!-- Contenido principal -->
+    <div class="row g-5">
+        <!-- Formulario -->
+        <div class="col-lg-8">
+            <div class="p-4 bg-white rounded border shadow-sm">
+                <h4 class="mb-4 text-dark">¿Cómo podemos ayudarte?</h4>
+                <form method="post" id="comentarioForm">
+                    {% csrf_token %}
+                    <!-- Tema principal -->
+                    <div class="mb-4">
+                        <label for="temaPrincipal" class="form-label text-dark">¿Sobre qué tema nos quieres enviar un comentario?</label>
+                        <select class="form-select custom-select" id="temaPrincipal" name="tema" onchange="handleTemaChange()">
+                            <option selected disabled value="">Selecciona un tema</option>
+                            <option value="Diseños personalizados">Diseños personalizados</option>
+                            <option value="Tallas y ajustes">Tallas y ajustes</option>
+                            <option value="Cotizaciones">Cotizaciones</option>
+                            <option value="Reservas">Reservas</option>
+                            <option value="Calidad del producto">Calidad del producto</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <!-- Subtema (oculto inicialmente) -->
+                    <div class="mb-4" id="subtemaContainer" style="display: none;">
+                        <label for="subTema" class="form-label text-dark">¿De qué tema o función se trata?</label>
+                        <select class="form-select custom-select" id="subTema" name="subtema" onchange="handleSubTemaChange()">
+                            <option selected disabled value="">Selecciona una opción</option>
+                            <!-- Opciones dinámicas serán manejadas por JavaScript -->
+                        </select>
+                    </div>
+
+                    <!-- Campo de texto (oculto inicialmente) -->
+                    <div class="mb-4" id="comentariosContainer" style="display: none;">
+                        <label for="comentarios" class="form-label text-dark">Agrega información</label>
+                        <textarea class="form-control" id="comentarios" rows="5" name="comentario" placeholder="Escribe aquí los detalles de tu comentario o solicitud (e.g., colores, cantidades, diseños específicos)."></textarea>
+                    </div>
+
+                    <!-- Botón Enviar (deshabilitado inicialmente) -->
+                    <div class="text-end">
+                        <button type="submit" id="enviarBtn" class="btn btn-dark px-4" disabled>Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sección lateral -->
+        <div class="col-lg-4">
+            <div class="p-4 rounded border">
+                <h5 class="fw-bold text-dark">¿Necesitas contactarnos?</h5>
+                <p class="text-muted fs-6">
+                    Comenzaremos con algunas preguntas y te llevaremos al lugar adecuado.
+                </p>
+                <div class="text-center">
+                    <button class="btn btn-outline-dark px-4" onclick="window.location.href='{% url 'Contacto' %}'">Contáctanos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para funcionalidad -->
+<script>
+    // Opciones dinámicas para el campo Subtema según el tema seleccionado
+    const subtemas = {
+        "Diseños personalizados": [
+            "Selección de colores",
+            "Inclusión de logos",
+            "Diseño desde cero",
+            "Modificaciones a diseños existentes"
+        ],
+        "Tallas y ajustes": [
+            "Consulta sobre tallas especiales",
+            "Disponibilidad de tallas",
+            "Guía de tallas"
+        ],
+        "Cotizaciones": [
+            "Precios por cantidad",
+            "Consulta de descuentos",
+            "Cotización personalizada"
+        ],
+        "Reservas": [
+            "Disponibilidad de reservas",
+            "Cambios en reservas",
+            "Cancelaciones de reservas"
+        ],
+        "Calidad del producto": [
+            "Problemas con materiales",
+            "Durabilidad del producto",
+            "Sugerencias de mejora"
+        ],
+        "Otro": [
+            "Otro tema (especificar en comentarios)"
+        ]
+    };
+
+    function handleTemaChange() {
+        const temaSelect = document.getElementById('temaPrincipal');
+        const subtemaContainer = document.getElementById('subtemaContainer');
+        const subTemaSelect = document.getElementById('subTema');
+
+        if (temaSelect.value) {
+            // Limpiar opciones previas del subtema
+            subTemaSelect.innerHTML = '<option selected disabled value="">Selecciona una opción</option>';
+
+            // Añadir nuevas opciones basadas en la selección del tema principal
+            subtemas[temaSelect.value].forEach(subtema => {
+                const option = document.createElement('option');
+                option.value = subtema;
+                option.textContent = subtema;
+                subTemaSelect.appendChild(option);
+            });
+
+            subtemaContainer.style.display = 'block'; // Mostrar subtema
+        } else {
+            subtemaContainer.style.display = 'none';
+        }
+
+        // Ocultar campos dependientes del subtema
+        handleSubTemaChange();
+    }
+
+    function handleSubTemaChange() {
+        const subTemaSelect = document.getElementById('subTema');
+        const comentariosContainer = document.getElementById('comentariosContainer');
+        const enviarBtn = document.getElementById('enviarBtn');
+
+        if (subTemaSelect.value) {
+            comentariosContainer.style.display = 'block'; // Mostrar campo de comentarios
+            enviarBtn.disabled = false; // Habilitar botón
+        } else {
+            comentariosContainer.style.display = 'none'; // Ocultar campo de comentarios
+            enviarBtn.disabled = true; // Deshabilitar botón
+        }
+    }
+</script>
+
+<script>
+    document.getElementById("comentarioForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        
+        let formData = new FormData(this);
+    
+        fetch("{% url 'comentarios' %}", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert("Comentario enviado con éxito");
+                document.getElementById("comentarioForm").reset();
+            } else {
+                alert("Error al enviar el comentario");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    });
+    </script>
+    
+{% endblock %}

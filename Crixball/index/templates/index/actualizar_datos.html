@@ -1,0 +1,144 @@
+{% extends 'header.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'chat_bubble.html' %}
+
+<style>
+    /* Contenedor general del formulario */
+.form-card {
+    background: #f9fbfd;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Campo input + botón editar */
+.input-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ced4da;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: white;
+    transition: border 0.3s;
+}
+
+.input-container:focus-within {
+    border-color: #0d6efd;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.2);
+}
+
+/* Campo input */
+.input-container .form-control {
+    border: none;
+    padding: 10px 15px;
+    flex-grow: 1;
+    font-size: 0.95rem;
+    border-radius: 0;
+    background-color: #f5f5f5;
+}
+
+/* Botón de editar */
+.btn-edit {
+    padding: 8px 10px;
+    background-color: #f0f0f0;
+    border-left: 1px solid #ccc;
+    color: #333;
+    font-size: 1rem;
+    border: none;
+    transition: background 0.3s, color 0.3s;
+}
+
+.btn-edit:hover {
+    background-color: #e4e4e4;
+    color: #007bff;
+}
+
+.btn-save {
+    background-color: #ff6f3c; /* Color tomate */
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 111, 60, 0.3);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-save:hover {
+    transform: translateY(-1px);
+}
+
+.btn-save:disabled {
+    background-color: #f7c6b3; /* Tomate muy claro para disabled */
+    color: #ffffffcc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+</style>
+
+<div class="container mt-5">
+    {% if form.errors %}
+        <div class="alert alert-danger shadow-sm rounded-3">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <p><strong>{{ field|capfirst }}</strong>: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if success_message %}
+        <div class="alert alert-success shadow-sm rounded-3">
+            <p>{{ success_message }}</p>
+        </div>
+    {% endif %}
+
+    <div class="form-card p-4 shadow-lg">
+        <h2 class="text-center mb-4 fw-bold text-primary">Actualizar Mis Datos</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="row">
+                {% for field in form %}
+                    <div class="col-md-6 mb-4">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+                        <div class="input-group input-container">
+                            {{ field }}
+                            <button type="button" class="btn btn-edit toggle-edit" data-field-id="{{ field.id_for_label }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-save" id="saveButton" disabled>
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.form-control').forEach(field => field.disabled = true);
+
+    document.querySelectorAll('.toggle-edit').forEach(button => {
+        button.addEventListener('click', function () {
+            const fieldId = this.dataset.fieldId;
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.disabled = !field.disabled;
+                document.getElementById('saveButton').disabled = false;
+            }
+        });
+    });
+</script>
+
+{% endblock %}

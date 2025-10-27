@@ -1,0 +1,218 @@
+/*body {
+    font-family: 'open sans', cursive;
+}
+
+input{
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.input-text{
+    margin: 10px;
+    width: 200px;
+    height: 30px;
+    border: solid 1px #f1f1f1;
+    border-radius: 5px;
+}
+
+.input-text:focus{
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+#input-submit{
+    margin: 10px;
+    width: 150px; 
+    height: 40px;
+    color: white;
+    background-color:  #4d0686;
+    border-radius: 10px;
+    border: solid 1px #f2f2f2;
+}
+
+#input-submit:hover{
+    background-color: #c24784;
+    border: solid 1px #dadada;
+    color: #fff;
+    transform: scale(1.2);
+}
+
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-color: black 10px;
+}
+
+.lblreserva{
+    text-align: left;
+    font-weight: bold;
+    display: flex;
+
+}
+
+select{
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+textarea{
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+*/
+
+
+ /* Ajuste del contenedor del modal */
+
+#registerModal .modal-dialog {
+    max-width: 600px; /* Ancho del modal */
+    margin: 30px auto;
+}
+
+#registerModal .modal-content {
+    padding: 20px;
+    border-radius: 15px; /* Bordes redondeados */
+    background-color: #ffffff;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4); /* Sombra */
+    max-height: 90vh; /* Altura máxima */
+    overflow-y: auto; /* Scroll si es necesario */
+}
+
+/* Contenedor del logo */
+#registerModal .logo-container {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#registerModal .logo-container img {
+    width: 80px; /* Tamaño del logo */
+    height: auto;
+}
+
+/* Contenedor del título */
+#registerModal .title-container {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+#registerModal .title-container .modal-title {
+    font-size: 22px; /* Tamaño ajustado del título */
+    font-weight: bold;
+    color: black;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Botón de cerrar */
+#registerModal .close-container {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+}
+
+#registerModal .close-container .close {
+    font-size: 20px;
+    color: #333;
+    opacity: 0.8;
+    transition: color 0.3s ease;
+}
+
+#registerModal .close-container .close:hover {
+    color: #4d0686;
+    opacity: 1;
+}
+
+/* Campos de texto */
+#registerModal .form-control {
+    margin: 10px 0;
+    height: 45px;
+    border: solid 1px #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+#registerModal .form-control:focus {
+    box-shadow: 0 0 10px rgba(77, 6, 134, 0.5);
+    border-color: #f49120;
+}
+
+/* Botón */
+#registerModal #input-submit {
+    width: 100%;
+    height: 50px;
+    background-color: #f49120;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+}
+
+#registerModal #input-submit:hover {
+    background-color: #f49120;
+    transform: scale(1.05);
+}
+
+/* Pie del modal */
+#registerModal .modal-footer {
+    display: flex; /* Usamos flexbox para alineación */
+    justify-content: center; /* Centramos horizontalmente */
+    align-items: center; /* Alineamos verticalmente */
+    flex-direction: column; /* Aseguramos que todo esté en una columna */
+    border-top: none;
+    padding-top: 10px; /* Espacio superior */
+    margin-top: 10px;
+}
+
+#registerModal .modal-footer p {
+    margin: 0; /* Eliminamos márgenes extras */
+    font-size: 14px;
+    color: #666;
+    text-align: center; /* Aseguramos el centrado del texto */
+}
+
+#registerModal .modal-footer a {
+    color: #f49120;
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 5px; /* Espaciado entre el texto */
+}
+
+#registerModal .modal-footer a:hover {
+    color: #f49120;
+}
+
+
+
+.alert-container {
+    margin-bottom: 15px;
+}
+
+.alert {
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    text-align: center;
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+

@@ -1,0 +1,58 @@
+{% extends 'header.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'chat_bubble.html' %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">📋 Comentarios de Clientes</h2>
+
+    <div class="card shadow-sm p-4">
+        {% if comentarios %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tema</th>
+                            <th>Subtema</th>
+                            <th>Comentario</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comentario in comentarios %}
+                        <tr>
+                            <td>{{ comentario.tema }}</td>
+                            <td>{{ comentario.subtema|default:"-" }}</td>
+                            <td>{{ comentario.comentario }}</td>
+                            <td>{{ comentario.fecha_creacion|date:"d M Y H:i" }}</td>
+                            <td>{{ comentario.usuario.nombre }} ({{ comentario.usuario.ci }})</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                No hay comentarios registrados todavía.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    h2 {
+        color: #343a40;
+    }
+    .card {
+        border-radius: 1rem;
+    }
+    table {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,61 @@
+
+{% load static %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peluquería D'Pelos Riobamba - Inicia Sesión</title>
+    <link rel="stylesheet" href="{% static 'css/inicio.css' %}">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700,800&display=swap" rel="stylesheet"> 
+</head>
+<body style="background-repeat: no-repeat; background-size: cover; background-color: black">
+    <a href="{% url 'Inicio' %}"><img src="{% static 'img/regresa.png' %}" alt="botonregresar" style="position: absolute; top: 20px; left: 20px; width: 65px; cursor: pointer;"></a>  
+    <br>
+      <br>
+      <br>
+      <center>
+        <div class="container">
+            <div class="image-container" style=" width: 100%; max-width: 130px;  height: auto;">
+                <img src="{% static 'img/logooficial.png' %}" alt="Crixball Logo" class="responsive-logo" style=" width: 100%; height: auto;">
+            </div>             <div id="login-form">
+              <h2>Iniciar sesión</h2>
+              <form action="" method="POST">
+                {% csrf_token %}
+                <table>
+                  <tr>
+                    <td><input type="email" id="input-text" placeholder="Correo electrónico" name="email" style="width: 300px;" required></td>
+                  </tr>
+                  <tr>
+                    <td><input type="password" name="contrasena" id="input-text" placeholder="Contraseña" style="width: 300px;" required></td>
+                  </tr>
+                </table>
+                  <tr>
+                    <td><input type="submit" name="submit" value="Iniciar Sesión" id="input-submit" style="background-color: #f49120;"></td>
+                  </tr>
+                <br>
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %}; font-size: 16px; font-family: 'Open Sans', sans-serif; padding: 10px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+              </form>
+            </div>
+          </div>
+          <br>
+          <div class="container2">
+            <div id="register-link">
+              ¿No tienes una cuenta?
+              <a href="{% url 'Registro' %}" style="text-decoration: none; color: #2471A3;">Regístrate</a>
+            </div>
+          </div>
+        
+      </center>
+    </body>
+
+{% endblock %}

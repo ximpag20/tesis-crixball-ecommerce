@@ -1,0 +1,146 @@
+{% extends 'header.html' %}
+{% block content %}
+{% include 'chat_bubble.html' %}
+<style>
+    .reservas-list {
+        max-width: 1200px;
+        margin: 20px auto;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .reserva-item {
+        border-bottom: 1px solid #ccc;
+        padding: 15px;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .reserva-item:hover {
+        background-color: #eaeaea;
+    }
+
+    .reserva-item h3 {
+        font-size: 18px;
+        color: #4D0686;
+        margin: 0;
+    }
+
+    .reserva-item p {
+        font-size: 14px;
+        margin: 0;
+        color: #555;
+    }
+
+    .reserva-details {
+        display: none;
+        padding: 15px;
+        background-color: #fff;
+        border-top: 1px solid #ccc;
+    }
+
+    .reserva-details p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .estado {
+        font-weight: bold;
+        text-transform: uppercase;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+
+    .estado-confirmada {
+        background-color: green;
+        color: white;
+    }
+
+    .hora-reserva {
+        color: #4D0686;
+        font-weight: bold;
+    }
+
+    .reserva-image {
+        max-width: 150px;
+        max-height: 150px;
+        margin-right: 15px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .details-content {
+        display: flex;
+        align-items: center;
+    }
+
+    .details-text {
+        flex: 1;
+    }
+</style>
+
+<h2 class="text-center my-4">Reservas del Día</h2>
+
+<div class="reservas-list">
+    {% if reservas_con_precios %}
+        {% for item in reservas_con_precios %}
+        <div class="reserva-item" onclick="toggleDetails({{ item.reserva.id_reserva }})">
+            <div>
+                <h3>Reserva #{{ item.reserva.id_reserva }}</h3>
+                <p>{{ item.reserva.ci.apellido }}, {{ item.reserva.ci.nombre }}</p>
+                <p><strong>Producto:</strong> {{ item.reserva.id_pro.nombre_pro }}</p>
+            </div>
+            <div>
+                <p class="hora-reserva">{{ item.reserva.hora_reserva|date:"h:i A" }}</p>
+            </div>
+        </div>
+        <div class="reserva-details" id="details-{{ item.reserva.id_reserva }}">
+            <div class="details-content">
+                {% if item.reserva.id_pro.imagen_pro %}
+                    <img src="{{ item.reserva.id_pro.imagen_pro.url }}" alt="{{ item.reserva.id_pro.nombre_pro }}" class="reserva-image">
+                {% endif %}
+                <div class="details-text">
+                    <p><strong>Talla:</strong> {{ item.reserva.talla.talla }}</p>
+                    <p><strong>Precio Unitario:</strong> 
+                        {% if item.precio_unitario %}
+                            ${{ item.precio_unitario }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </p>
+                    <p><strong>Cantidad Reservada:</strong> {{ item.reserva.cantidad_reservada }}</p>
+                    <p><strong>Total:</strong> 
+                        {% if item.total %}
+                            ${{ item.total }}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </p>
+                    <p><strong>Comentario:</strong> {{ item.reserva.comentario|default:"Sin comentarios" }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; color: gray;">No hay reservas registradas para el día de hoy.</p>
+    {% endif %}
+</div>
+
+<script>
+    function toggleDetails(reservaId) {
+        const details = document.getElementById(`details-${reservaId}`);
+        if (details.style.display === 'none' || details.style.display === '') {
+            details.style.display = 'block';
+        } else {
+            details.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,400 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        /* Estilos para la imagen que actúa como burbuja flotante */
+        #chat-bubble {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    object-fit: contain;
+}
+
+/* Hover animación (opcional) */
+#chat-bubble:hover {
+    transform: scale(1.1);
+}
+
+
+        /* Contenedor del chatbox */
+        #chatbox-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 350px;
+            max-width: 90%;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+            height: 400px;
+        }
+
+        /* Encabezado del chat */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1A73E8;
+            color: white;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .chat-header .status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .chat-header .status span {
+            font-size: 14px;
+        }
+
+        .chat-header .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+        }
+
+        .chat-header button {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .chat-header button:hover {
+            color: #cccccc;
+        }
+
+        /* Contenedor de mensajes y área de entrada */
+        #chatbox {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-message {
+            background-color: #1A73E8;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        .bot-message {
+            background-color: #e3e3e3;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Entrada de texto */
+        .input-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f1f1f1;
+            border-top: 1px solid #ddd;
+            flex-shrink: 0; /* Mantiene el área de entrada fija */
+        }
+
+        #userMessage {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            outline: none;
+        }
+
+        #userMessage:focus {
+            border-color: #1A73E8;
+        }
+
+        .icon-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+        }
+
+        .icon-container img {
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .icon-container img:hover {
+            transform: scale(1.2);
+        }
+
+        /* Responsividad */
+        @media (max-width: 600px) {
+    #chatbox-container {
+        width: 95%;
+        bottom: 80px;
+        right: 2.5%;
+        height: 80%;
+        max-height: 500px;
+        border-radius: 15px;
+    }
+
+    #chatbox {
+        height: 100%;
+    }
+
+    .chat-header {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    #messages {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .message-bubble {
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    .input-area {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px;
+    }
+
+    #userMessage {
+        font-size: 13px;
+    }
+
+    .icon-container {
+        justify-content: flex-end;
+    }
+}
+
+
+        #chat-idea {
+    position: fixed;
+    bottom: 90px;
+    right: 35px;
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    border-radius: 20px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    z-index: 999;
+    animation: fadeIn 1s ease, fadeOut 1s ease 6s forwards;
+    max-width: 220px;
+    position: fixed;
+}
+
+/* Triángulo tipo “globo” */
+.chat-idea-pointer {
+    position: absolute;
+    bottom: -10px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid #ffffff;
+    filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(-10px); visibility: hidden; }
+}
+
+    </style>
+</head>
+<body>
+
+    <!-- Burbuja flotante -->
+    <img src="{% static 'img/bot.png' %}" alt="Chatbot"
+    id="chat-bubble"
+    onclick="toggleChatbox()">
+
+    <!-- Burbuja de bienvenida tipo idea del chatbot -->
+    <div id="chat-idea">
+        <span>Hola, soy tu asistente virtual 👋</span>
+        <div class="chat-idea-pointer"></div>
+    </div>
+
+
+
+    <!-- Contenedor del chat -->
+    <div id="chatbox-container">
+        <div id="chatbox">
+            <div class="chat-header">
+                <div class="status">
+                    <span>Asistente</span>
+                    <div class="status-dot"></div>
+                </div>
+                <button onclick="closeChatbox()">&times;</button>
+            </div>
+            <div id="messages">
+                <div class="message-bubble bot-message">Hola, estamos conectados. ¿En qué podemos ayudarte?</div>
+                {% for msg in mensajes %}
+                    <div class="message-bubble {% if msg.emisor == 'usuario' %}user-message{% else %}bot-message{% endif %}">
+                        {{ msg.contenido|safe }}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if request.session.correo_usuario %}
+            <div class="input-area">
+                <input type="text" id="userMessage" placeholder="Escribe un mensaje...">            
+                <div class="icon-container">
+                    <img src="{% static 'img/feliz.png' %}" alt="Emoji" onclick="showEmojis()">
+                    <img src="{% static 'img/enviar.png' %}" alt="Enviar" onclick="sendMessage()">
+                </div>
+            </div>
+            {% else %}
+            <div class="input-area" style="flex-direction: column; align-items: center; text-align: center;">
+                <p style="margin: 0; font-size: 14px; color: #555;">Inicia sesión para usar el chat</p>
+                <a href="#" data-toggle="modal" data-target="#loginModal" class="login-btn">Iniciar sesión</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+<script>
+    function toggleChatbox() {
+        const chatbox = document.getElementById("chatbox-container");
+        chatbox.style.display = chatbox.style.display === "flex" ? "none" : "flex";
+    }
+
+    function closeChatbox() {
+        document.getElementById("chatbox-container").style.display = "none";
+    }
+
+    function scrollToBottom() {
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    async function sendMessage() {
+    const userMessage = document.getElementById("userMessage").value;
+    if (!userMessage) return;
+
+    const messagesDiv = document.getElementById("messages");
+    messagesDiv.innerHTML += `<div class="message-bubble user-message">${userMessage}</div>`;
+    scrollToBottom(); // 👈 aquí
+
+    const botTyping = document.createElement("div");
+    botTyping.className = "message-bubble bot-message";
+    botTyping.textContent = "Escribiendo...";
+    messagesDiv.appendChild(botTyping);
+    scrollToBottom(); // 👈 aquí también
+
+    const response = await fetch("{% url 'dialogflow_chat' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify({ message: userMessage }),
+    });
+
+    const data = await response.json();
+    botTyping.remove();
+
+    messagesDiv.innerHTML += `<div class="message-bubble bot-message">${data.response}</div>`;
+    scrollToBottom(); // 👈 otra vez
+    document.getElementById("userMessage").value = "";
+}
+
+document.getElementById("userMessage").addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+
+
+    function showEmojis() {
+        alert("Función de emojis no implementada todavía.");
+    }
+</script>
+<script>
+    // Elimina la burbuja después de 8 segundos (por si el usuario interactúa antes)
+    setTimeout(() => {
+        const idea = document.getElementById("chat-idea");
+        if (idea) {
+            idea.remove();
+        }
+    }, 8000);
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        await cargarHistorial(); // al cargar la página
+    });
+    
+    async function cargarHistorial() {
+        const messagesDiv = document.getElementById("messages");
+        const response = await fetch("{% url 'obtener_historial_chat' %}");
+        const data = await response.json();
+        if (data.mensajes) {
+            data.mensajes.forEach(msg => {
+                const clase = msg.rol === "user" ? "user-message" : "bot-message";
+                messagesDiv.innerHTML += `<div class="message-bubble ${clase}">${msg.contenido}</div>`;
+            });
+            scrollToBottom();
+        }
+    }
+    </script>
+    
+</body>
+</html>

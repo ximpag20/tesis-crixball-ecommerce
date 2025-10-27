@@ -1,0 +1,96 @@
+{% load static %}
+ <!-- Footer Start -->
+ <div class="footer container-fluid position-relative bg-dark py-5" style="margin-top: 10px;">
+    <div class="container pt-5">
+        <div class="row">
+            <div class="col-lg-6 pr-lg-5 mb-5">
+                <a href="index.html" class="navbar-brand">
+                    <img src="{% static 'img/letras.png' %}" alt="Crixball" class="display-3 text-capitalize text-white mb-3 mt-n3" width="250">
+                </a>
+                <p style="text-align: justify;">Si tienes alguna pregunta, necesitas más información o simplemente deseas ponerte en contacto con nosotros, aquí encontrarás nuestras formas de comunicación.</p>
+                <p><i class="fa fa-map-marker-alt mr-2"></i>Santa Rosa. Ambato, Ecuador</p>
+                <p><i class="fa fa-phone-alt mr-2"></i>+593 99 703 0796</p>
+                <p><i class="fa fa-envelope mr-2"></i>crixball@hotmail.com</p>
+                <div class="d-flex justify-content-start mt-4">
+                    <a class="btn btn-lg btn-primary btn-lg-square mr-2" href="https://x.com/mmrs_75?t=k8deAXCXt_w_Zyl58j6baA&s=09"><i class="fab fa-twitter"></i></a>
+                    <a class="btn btn-lg btn-primary btn-lg-square mr-2" href="https://www.facebook.com/people/Crixball/100064230571913/?sk=about_contact_and_basic_info"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-lg btn-primary btn-lg-square mr-2" href="https://www.linkedin.com/in/crixball-ingeniera-margoth-rivera-6847a4b7/"><i class="fab fa-linkedin-in"></i></a>
+                    <a class="btn btn-lg btn-primary btn-lg-square" href="https://www.instagram.com/crixball?igsh=NWVvenF3czk3bDJu"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-6 pl-lg-5">
+                <div class="row">
+                    <div class="col-sm-6 mb-5">
+                        <h5 class="text-white text-uppercase mb-4">Índice</h5>
+                        <div class="d-flex flex-column justify-content-start">
+                            <a class="text-white-50 mb-2" href="{% url 'Inicio' %}"><i class="fa fa-angle-right mr-2"></i>Inicio</a>
+                            <a class="text-white-50 mb-2" href="{% url 'Acerca' %}"><i class="fa fa-angle-right mr-2"></i>Nosotros</a>
+                                {% if request.session.correo_usuario %}
+                                <!-- Usuario autenticado: redirige a las vistas correspondientes -->
+                                <a class="text-white-50 mb-2" href="{% url 'Catalogo' %}">
+                                    <i class="fa fa-angle-right mr-2"></i>Catálogo
+                                </a>
+                                <a class="text-white-50 mb-2" href="{% url 'Citas' %}">
+                                    <i class="fa fa-angle-right mr-2"></i>Citas
+                                </a>
+                                {% else %}
+                                <!-- Usuario no autenticado: muestra el modal de inicio de sesión -->
+                                <a class="text-white-50 mb-2" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Catálogo
+                                </a>
+                                <a class="text-white-50 mb-2" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Citas
+                                </a>
+                                {% endif %}
+                        
+                            <a class="text-white-50" href="{% url 'Contacto' %}"><i class="fa fa-angle-right mr-2"></i>Contacto</a>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 mb-5">
+                        <h5 class="text-white text-uppercase mb-4">Nuestros Productos</h5>
+                        <div class="d-flex flex-column justify-content-start">
+                            {% if request.session.correo_usuario %}
+                                <!-- Usuario autenticado: redirige a las vistas correspondientes -->
+                                <a class="text-white-50 mb-2" href="{% url 'Catalogo' %}"><i class="fa fa-angle-right mr-2"></i>Camisetas</a>
+                                <a class="text-white-50 mb-2" href="{% url 'Catalogo' %}"><i class="fa fa-angle-right mr-2"></i>Ternos deportivos</a>
+                                <a class="text-white-50 mb-2" href="{% url 'Catalogo' %}"><i class="fa fa-angle-right mr-2"></i>Uniformes escolares</a>
+                                <a class="text-white-50 mb-2" href="{% url 'Catalogo' %}"><i class="fa fa-angle-right mr-2"></i>Medias</a>
+                                <a class="text-white-50" href="{% url 'Catalogo' %}"><i class="fa fa-angle-right mr-2"></i>Y mucho más</a>
+                            {% else %}
+                                <!-- Usuario no autenticado: muestra el modal de inicio de sesión -->
+                                <a class="text-white-50 mb-2" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Camisetas
+                                </a>
+                                <a class="text-white-50 mb-2" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Ternos deportivos
+                                </a>
+                                <a class="text-white-50 mb-2" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Uniformes escolares
+                                </a>
+                                <a class="text-white-50 mb-2" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Medias
+                                </a>
+                                <a class="text-white-50" href="#" data-toggle="modal" data-target="#loginModal">
+                                    <i class="fa fa-angle-right mr-2"></i>Y mucho más
+                                </a>
+                            {% endif %}
+                        </div>                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid bg-dark text-light border-top py-4" style="border-color: rgba(256, 256, 256, .15) !important;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 text-center text-md-left mb-3 mb-md-0">
+                <p class="m-0 text-white">&copy; <a href="crixball@hotmail.com">Crixball</a>. Todos los derechos reservados.</p>
+            </div>
+            <div class="col-md-6 text-center text-md-right">
+                <p class="m-0 text-white">Diseñado por <a href="https://htmlcodex.com">Kevin Chango</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Footer End -->

@@ -1,0 +1,588 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% block extra_css %}{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="Free HTML Templates" name="keywords">
+    <meta content="Free HTML Templates" name="description">
+
+    <link href="{% static 'img/logooficial.ico' %}" rel="icon">
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
+    <link href="{% static 'lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
+    <link href="{% static 'lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css' %}" rel="stylesheet" />
+
+    <title>Crixball</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/inicio.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sigin.css' %}">
+</head>
+<body>
+
+<style>
+    /* Asegura que el menú desplegable no desaparezca al mover el mouse */
+.nav-item.dropdown:hover .dropdown-menu {
+    display: block;
+    margin-top: 0;
+}
+
+/* Asegura que la animación sea suave */
+.dropdown-menu {
+    transition: all 0.3s ease-in-out;
+}
+
+ /* Centrar el ícono verticalmente */
+ .position-relative button i {
+        font-size: 1.2rem;
+        line-height: normal;
+    }
+</style>
+
+<!-- Navbar Start -->
+<div class="container-fluid p-0">
+    <nav class="navbar navbar-expand-lg bg-dark navbar-light py-3 py-lg-0 px-lg-5">
+        <a href="{% url 'Inicio' %}" class="navbar-brand ml-lg-3">
+            <div class="image-container" style="width: 100%; max-width: 130px; height: auto;">
+                <img src="{% static 'img/logooficial.png' %}" alt="Crixball Logo" class="responsive-logo" style="width: 100%; height: auto;">
+            </div>
+        </a>
+        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-miterlimit="10" class="feather feather-menu">
+        <path d="M3 6h24M3 12h24M3 18h24"/>
+    </svg>
+</button>
+
+        <div class="collapse navbar-collapse justify-content-between px-lg-3" id="navbarCollapse">
+            <div class="navbar-nav m-auto py-0">
+                <a href="{% url 'Inicio' %}" class="nav-item nav-link text-white">Inicio</a>
+                <a href="{% url 'Acerca' %}" class="nav-item nav-link text-white">Nosotros</a>
+                <a href="{% url 'Contacto' %}" class="nav-item nav-link text-white">Contacto</a>
+                {% if request.session.correo_usuario %}
+                    <a href="{% url 'Catalogo' %}" class="nav-item nav-link text-white">Catálogo</a>
+                    <a href="{% url 'Citas' %}" class="nav-item nav-link text-white">Revervas</a>
+
+                    <!-- Menú desplegable para administrador -->
+                    {% if request.session.rol_usuario == 'administrador' %}
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle text-white d-flex align-items-center" id="adminDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="mr-2">{{ request.session.nombre_usuario }} {{ request.session.apellido_usuario }}</span>
+                            <i class="fas fa-user-shield"></i> <!-- Icono de administrador -->
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="adminDropdown">
+                            <a href="{% url 'administrar_productos' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-box-open mr-2"></i> <!-- Icono -->
+                                Administrar Productos
+                            </a>
+                            <a href="{% url 'calendario_reservas' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-calendar-alt mr-2"></i> <!-- Icono -->
+                                Calendario de Reservas
+                            </a>
+                            <a href="{% url 'reservas_hoy' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-calendar-day mr-2"></i> <!-- Icono -->
+                                Ver Reservas de Hoy
+                            </a>
+                            <a href="{% url 'ver_todas_reservas' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-calendar-check mr-2"></i> <!-- Icono -->
+                                Ver Todas las Reservas
+                            </a>
+                            <a href="{% url 'ver_comentarios' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-comments mr-2"></i> <!-- Icono -->
+                                Ver Comentarios
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'actualizar_datos' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-user-edit mr-2"></i> <!-- Icono -->
+                                Actualizar Mis Datos
+                            </a>
+                            <a href="{% url 'cambiar_contrasena' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-key mr-2"></i> <!-- Icono -->
+                                Cambiar Contraseña
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <form action="{% url 'cerrar_sesion' %}" method="post" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item d-flex align-items-center text-danger">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> <!-- Icono -->
+                                    Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Menú desplegable para usuario -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle text-white d-flex align-items-center" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="mr-2">{{ request.session.nombre_usuario }} {{ request.session.apellido_usuario }}</span>
+                            <i class="fas fa-user"></i> <!-- Icono de usuario -->
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
+                            <a href="{% url 'reservas_cliente' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-calendar-check mr-2"></i> <!-- Icono -->
+                                Mis Reservas
+                            </a>
+                            <a href="{% url 'actualizar_datos' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-user-edit mr-2"></i> <!-- Icono -->
+                                Actualizar Mis Datos
+                            </a>
+                            <a href="{% url 'cambiar_contrasena' %}" class="dropdown-item d-flex align-items-center">
+                                <i class="fas fa-key mr-2"></i> <!-- Icono -->
+                                Cambiar Contraseña
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <form action="{% url 'cerrar_sesion' %}" method="post" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item d-flex align-items-center text-danger">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> <!-- Icono -->
+                                    Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <li class="nav-item dropdown position-relative">
+                        <a class="nav-link dropdown-toggle text-white position-relative" href="#" id="notificacionesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge badge-danger position-absolute" style="top: 0; right: 0; font-size: 0.8rem; display: none;">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" style="min-width: 300px;">
+                            <p class="dropdown-item text-center text-muted">Cargando...</p>
+                        </div>
+                    </li>                    
+                    
+                {% else %}
+                    <a href="#" class="nav-item nav-link text-white" data-toggle="modal" data-target="#loginModal">Iniciar Sesión</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+</div>
+
+<!-- Navbar End -->
+
+<!-- Modal Login -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="image-container text-center">
+                    <img src="{% static 'img/logooficial.png' %}" alt="Logo" style="width: 100%; max-width: 130px; height: auto; margin-bottom: 20px;">
+                </div>
+                <h5 class="modal-title text-center mb-4" id="loginModalLabel">Iniciar Sesión</h5>
+                
+                <form action="{% url 'Autenticacion' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    
+                    <div class="text-center">
+                        <input type="email" name="email" id="input-email" 
+                               placeholder="Correo electrónico" value="{{ request.POST.email }}" required>
+                    </div>
+                    
+                    <div class="text-center position-relative">
+                        <input type="password" name="contrasena" 
+                               id="input-password" class="form-control"
+                               placeholder="Contraseña" required>
+                        <button type="button" class="btn btn-transparent position-absolute" 
+                                style="right: 10px; top: 50%; transform: translateY(-50%); padding: 0; border: none;" 
+                                onclick="togglePasswordVisibility()">
+                            <i id="password-icon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                    </div>
+                    
+                    <div class="messages-container">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="register-container">
+                ¿No tienes una cuenta? 
+                <a href="#" id="switchToRegister" style="text-decoration: none; color: #2471A3;">Regístrate</a>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Login End -->
+
+<!-- Modal de Registro -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="logo-container">
+                <img src="{% static 'img/logooficial.png' %}" alt="Logo">
+            </div>
+            <div class="close-container">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="title-container">
+                <h5 class="modal-title" id="registerModalLabel">Regístrate para empezar a reservar tus citas</h5>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="col">
+                            <input type="text" name="nombre" class="form-control" placeholder="Nombre" value="{{ nombre }}" required>
+                        </div>
+                        <div class="col">
+                            <input type="text" name="apellido" class="form-control" placeholder="Apellido" value="{{ apellido }}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col">
+                            <input type="text" name="CI" class="form-control" placeholder="Cédula de Identidad (CI)" value="{{ CI }}" maxlength="10" required>
+                            <script>
+                                document.getElementById('CI').addEventListener('input', function() {
+                                  this.value = this.value.replace(/[^\d]/g, '');
+                                });
+                            </script>
+                        </div>
+                        <div class="col">
+                            <input type="tel" name="tel" class="form-control" placeholder="Número de celular" maxlength="10" value="{{ tel }}" required>
+                            <script>
+                                document.getElementById('tel').addEventListener('input', function() {
+                                  this.value = this.value.replace(/[^\d]/g, '');
+                                });
+                            </script>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" class="form-control" placeholder="Correo electrónico" value="{{ email }}" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="col position-relative">
+                            <input type="password" name="contrasena" id="register-password" class="form-control" placeholder="Contraseña" required>
+                            <button type="button" class="btn btn-transparent position-absolute" 
+                                    style="right: 10px; top: 50%; transform: translateY(-50%); padding: 0; border: none;" 
+                                    onclick="toggleRegisterPasswordVisibility('register-password', 'register-password-icon')">
+                                <i id="register-password-icon" class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="col position-relative">
+                            <input type="password" name="confirmar_contrasena" id="register-confirm-password" class="form-control" placeholder="Confirmar contraseña" required>
+                            <button type="button" class="btn btn-transparent position-absolute" 
+                                    style="right: 10px; top: 50%; transform: translateY(-50%); padding: 0; border: none;" 
+                                    onclick="toggleRegisterPasswordVisibility('register-confirm-password', 'register-confirm-password-icon')">
+                                <i id="register-confirm-password-icon" class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="birth">Fecha de Nacimiento</label>
+                        <input type="date" name="birth" id="birth" class="form-control" value="{{ birth }}" required>
+                    </div>
+
+                    <small><div id="registerErrors" class="text-danger"></div></small>
+                    
+                    <div class="text-center">
+                        <button type="submit" id="input-submit">Registrarte</button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <p>¿Ya tienes una cuenta? <a href="#" id="switchToLogin" style="color: #2471A3;">Iniciar sesión</a></p>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Mantén el script que ya tenías -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let mostrarModal = false;
+    {% if messages %}
+        {% for message in messages %}
+            {% if 'reserva' not in message.tags %}
+                mostrarModal = true;
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    if (mostrarModal) {
+        $('#loginModal').modal('show');
+    }
+
+    $('#loginModal').on('hidden.bs.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css({
+            'overflow': '',
+            'padding-right': ''
+        });
+        $('.messages-container').html('');
+    });
+});
+</script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Alternar a formulario de registro
+            document.getElementById('switchToRegister').addEventListener('click', function(event) {
+                event.preventDefault();
+                $('#loginModal').modal('hide'); // Ocultar modal de login
+                $('#registerModal').modal('show'); // Mostrar modal de registro
+            });
+    
+            // Alternar a formulario de inicio de sesión
+            document.getElementById('switchToLogin').addEventListener('click', function(event) {
+                event.preventDefault();
+                $('#registerModal').modal('hide'); // Ocultar modal de registro
+                $('#loginModal').modal('show'); // Mostrar modal de login
+            });
+        });
+    </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("registerForm");
+        const errorContainer = document.getElementById("registerErrors");
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault(); // Evitar recarga de página
+
+            const formData = new FormData(form);
+
+            fetch("{% url 'Registro' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Ocultar el modal de registro
+                    $('#registerModal').modal('hide');
+
+                    // Mostrar el modal de inicio de sesión
+                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'), {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+
+                    // Insertar el mensaje de éxito en el contenedor de mensajes del modal de inicio de sesión
+                    const loginMessageContainer = document.querySelector('#loginModal .messages-container');
+                    loginMessageContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            ${data.message}
+                        </div>
+                    `;
+
+                    // Mostrar el modal de inicio de sesión
+                    loginModal.show();
+                } else {
+                    // Mostrar errores en el modal de registro
+                    errorContainer.innerHTML = data.errors.map(error => `<p>${error}</p>`).join("");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    // Permitir que el menú desplegable funcione correctamente al pasar el mouse
+    const dropdowns = document.querySelectorAll('.nav-item.dropdown');
+    dropdowns.forEach(function(dropdown) {
+        dropdown.addEventListener('mouseenter', function() {
+            const menu = this.querySelector('.dropdown-menu');
+            menu.classList.add('show');
+        });
+        dropdown.addEventListener('mouseleave', function() {
+            const menu = this.querySelector('.dropdown-menu');
+            menu.classList.remove('show');
+        });
+    });
+});
+
+</script>
+
+    <!-- Contenido dinámico -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% include 'footer.html' %}
+    <!-- Back to Top 
+<a href="#" class="btn btn-lg btn-primary back-to-top position-fixed" style="bottom: 140px;">
+    <i class="fa fa-angle-double-up"></i>
+</a>-->
+<!-- Back to Top-->
+<a href="#" class="btn btn-lg btn-primary back-to-top" style="position: fixed; bottom: 20px; left: 20px; right: auto !important;"><i class="fa fa-angle-double-up"></i></a>
+
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'lib/easing/easing.min.js' %}"></script>
+    <script src="{% static 'lib/waypoints/waypoints.min.js' %}"></script>
+    <script src="{% static 'lib/counterup/counterup.min.js' %}"></script>
+    <script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'lib/tempusdominus/js/moment.min.js' %}"></script>
+    <script src="{% static 'lib/tempusdominus/js/moment-timezone.min.js' %}"></script>
+    <script src="{% static 'lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js' %}"></script>
+
+    <!-- Contact Javascript File -->
+    <script src="{% static 'mail/jqBootstrapValidation.min.js' %}"></script>
+    <script src="{% static 'mail/contact.js' %}"></script>
+
+    <!-- Template Javascript -->
+    <script src="{% static 'js/main.js' %}"></script>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById("input-password");
+            const passwordIcon = document.getElementById("password-icon");
+            
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                passwordIcon.classList.remove("fa-eye");
+                passwordIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                passwordIcon.classList.remove("fa-eye-slash");
+                passwordIcon.classList.add("fa-eye");
+            }
+        }
+    </script>
+
+    <script>
+        function toggleRegisterPasswordVisibility(inputId, iconId) {
+        const passwordInput = document.getElementById(inputId);
+        const passwordIcon = document.getElementById(iconId);
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            passwordIcon.classList.remove("fa-eye");
+            passwordIcon.classList.add("fa-eye-slash");
+        } else {
+            passwordInput.type = "password";
+            passwordIcon.classList.remove("fa-eye-slash");
+            passwordIcon.classList.add("fa-eye");
+        }
+    }
+    </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const notificacionesDropdown = document.getElementById('notificacionesDropdown');
+        const notificacionesBadge = notificacionesDropdown.querySelector('.badge');
+        const notificacionesMenu = notificacionesDropdown.nextElementSibling;
+    
+        // Función para actualizar las notificaciones
+        function actualizarNotificaciones() {
+            fetch('{% url "obtener_notificaciones" %}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener notificaciones');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Actualizar el badge
+                if (data.count > 0) {
+                    notificacionesBadge.textContent = data.count;
+                    notificacionesBadge.style.display = 'inline';
+                } else {
+                    notificacionesBadge.style.display = 'none';
+                }
+    
+                // Actualizar el menú de notificaciones
+                notificacionesMenu.innerHTML = '';
+                if (data.notificaciones.length > 0) {
+                    data.notificaciones.forEach(noti => {
+                        notificacionesMenu.innerHTML += `
+                            <a href="#" data-id="${noti.id}" data-link="${noti.link}" class="dropdown-item marcar-notificacion">
+                                <span>${noti.message}</span>
+                                <small class="text-muted d-block">${noti.created_at}</small>
+                            </a>
+                        `;
+                    });
+    
+                    // Asignar eventos para marcar como leída y redirigir
+                    document.querySelectorAll('.marcar-notificacion').forEach(item => {
+                        item.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            marcarNotificacionLeida(this.dataset.id, this.dataset.link);
+                        });
+                    });
+                } else {
+                    notificacionesMenu.innerHTML = '<p class="dropdown-item text-center text-muted">No tienes notificaciones.</p>';
+                }
+            })
+            .catch(error => console.error('Error al obtener notificaciones:', error));
+        }
+    
+        // Función para marcar una notificación como leída y redirigir
+        function marcarNotificacionLeida(notificacionId, link) {
+            fetch(`{% url 'marcar_notificacion_leida' 0 %}`.replace('0', notificacionId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al marcar notificación como leída');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = link; // Redirigir al enlace
+                }
+            })
+            .catch(error => console.error('Error al marcar notificación como leída:', error));
+        }
+    
+        // Consultar las notificaciones cada 10 segundos
+        setInterval(actualizarNotificaciones, 10000);
+    
+        // Consultar inicialmente al cargar la página
+        actualizarNotificaciones();
+    });
+    </script>
+    
+
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

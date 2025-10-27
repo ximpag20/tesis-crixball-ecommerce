@@ -1,0 +1,168 @@
+{% extends 'header.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'chat_bubble.html' %}
+<style>
+    .form-container-password {
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: #f9fafc;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+}
+
+.form-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ff6f3c; /* Color tomate */
+}
+
+.form-password .form-label {
+    font-weight: 500;
+    color: #444;
+}
+
+.form-password .form-group input {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: 100%;
+    background-color: #f2f2f2;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-password .form-group input:focus {
+    border-color: #ff6f3c;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 111, 60, 0.15);
+    outline: none;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-wrapper input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    background-color: #f2f2f2;
+    transition: all 0.2s ease-in-out;
+}
+
+.input-wrapper input:focus {
+    border-color: #ff6f3c;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 111, 60, 0.15);
+    outline: none;
+}
+
+.btn-eye {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0 6px;
+    height: 100%;
+}
+
+.btn-save {
+    background-color: #ff6f3c; /* Tomate */
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 111, 60, 0.3);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    margin: 0 auto; /* centrado horizontal */
+}
+
+.btn-save:hover {
+    background-color: #e65a28;
+    transform: translateY(-1px);
+}
+
+.btn-save:disabled {
+    background-color: #f7c6b3;
+    color: #ffffffcc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+
+</style>
+<div class="form-container-password mt-5">
+    <!-- Mostrar errores relacionados con el formulario -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <p>{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if success_message %}
+        <div class="alert alert-success">
+            <p>{{ success_message }}</p>
+        </div>
+    {% endif %}
+
+    <h2 class="form-title text-center mb-4">Cambiar Contraseña</h2>
+    <form method="POST" class="form-password">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group mb-4">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            <div class="input-wrapper">
+                {{ field }}
+                {% if field.field.widget.input_type == "password" %}
+                    <button type="button" class="btn-eye toggle-password" data-field-id="{{ field.id_for_label }}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% endfor %}
+        <div class="text-center">
+            <button type="submit" class="btn-save">🔒 Actualizar Contraseña</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Mostrar/ocultar contraseñas
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function () {
+            const fieldId = this.getAttribute('data-field-id');
+            const field = document.getElementById(fieldId);
+            const icon = this.querySelector('i');
+
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
+
+{% endblock %}

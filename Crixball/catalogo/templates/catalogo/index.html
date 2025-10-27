@@ -1,0 +1,907 @@
+{% extends 'header.html' %}
+{% load static %}
+{% block content %}
+{% include 'chat_bubble.html' %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Servicios</title>
+    <link rel="stylesheet" href="{% static 'css/catalogo.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Encabezado del catálogo */
+        .catalog-header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            background: none;
+        }
+
+        .catalog-header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Contenedor del buscador y filtros */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+            background: #fff;
+        }
+
+        .search-input {
+            padding: 10px;
+            font-size: 1rem;
+            border: none;
+            outline: none;
+            flex: 1;
+        }
+
+        .search-icon {
+            padding: 10px;
+            font-size: 1.2rem;
+            color: #666;
+            background: none;
+            cursor: pointer;
+        }
+
+        .filters-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .filters-btn i {
+            margin-right: 5px;
+        }
+
+        .filters-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            position: relative;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            width: 50%;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: center; /* Centrar el título */
+            position: relative;
+            border-bottom: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #666;
+            background: none;
+            border: none;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .modal-table th,
+        .modal-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .modal-table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        .highlight {
+        background-color: #C0C0C0; /* Color de fondo para el texto resaltado */
+        font-weight: bold;
+    }
+/* Estilos generales del modal de filtros */
+#filtersModal {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semitransparente */
+    overflow: hidden; /* Desactiva el scroll de la página */
+}
+
+/* Contenido del modal */
+#filtersModalContent {
+    position: relative;
+    background-color: #ffffff;
+    margin: 5% auto; /* Centrado vertical y horizontal */
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Sombras suaves */
+    animation: fadeIn 0.3s ease-in-out;
+    max-height: 80%; /* Limita la altura del modal para evitar que ocupe toda la pantalla */
+    display: flex;
+    flex-direction: column; /* Asegura que los elementos dentro del modal se alineen correctamente */
+}
+
+/* Hacer el formulario desplazable */
+#filtersForm {
+    flex: 1; /* Permite que el formulario ocupe el espacio disponible */
+    overflow-y: auto; /* Scroll solo vertical dentro del formulario */
+    padding-right: 10px; /* Espacio para el scroll */
+    max-height: 100%; /* Asegura que el formulario no exceda el contenedor del modal */
+}
+
+/* Botón de cerrar */
+#filtersCloseBtn {
+    position: absolute; /* Posición absoluta para colocarla dentro del modal */
+    top: 10px; /* Distancia desde la parte superior */
+    right: 15px; /* Distancia desde la derecha */
+    color: #333333;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+#filtersCloseBtn:hover {
+    color: #ff4d4d; /* Rojo suave al pasar el ratón */
+}
+
+/* Encabezado del modal */
+#filtersModal h2 {
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    text-align: center;
+    color: #333333;
+    font-weight: bold;
+}
+
+/* Estilo de los grupos de filtros */
+.filters-group {
+    margin-bottom: 20px;
+}
+
+.filters-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #555555;
+}
+
+.filters-group select,
+.filters-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.filters-group select:focus,
+.filters-group input:focus {
+    border-color: #007bff; /* Azul al enfocarse */
+}
+
+/* Checkbox especial */
+.filters-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+/* Contenedor de los botones de acción */
+.filters-actions {
+    display: flex;
+    justify-content: space-between; /* Botones separados */
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Botón de quitar filtros */
+.clear-filters-btn {
+    background-color: red; /* Fondo rojo */
+    color: white; /* Texto blanco */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.clear-filters-btn:hover {
+    background-color: #cc0000; /* Rojo más oscuro al pasar el ratón */
+}
+
+/* Botón de aplicar filtros */
+.apply-filters-btn {
+    background-color: green; /* Fondo verde */
+    color: white; /* Texto blanco */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.apply-filters-btn:hover {
+    background-color: #006400; /* Verde más oscuro al pasar el ratón */
+}
+
+/* Responsividad */
+@media (max-width: 480px) {
+    #filtersModalContent {
+        width: 95%;
+    }
+
+    #filtersModal h2 {
+        font-size: 1.5rem;
+    }
+
+    .filters-actions {
+        flex-direction: column; /* Botones apilados en pantallas pequeñas */
+        gap: 15px;
+    }
+
+    .clear-filters-btn,
+    .apply-filters-btn {
+        width: 100%;
+    }
+}
+
+.favorite-btn:hover {
+    background: white; /* Evitar cambios en el fondo */
+    box-shadow: none; /* Eliminar sombras */
+    transform: none; /* Evitar escalado o transformaciones */
+}
+
+.favorite-btn i:hover {
+    color: inherit; /* Mantener el color actual del ícono */
+}
+
+/* Añade estos estilos al final de tu sección <style> */
+
+/* Contenedor principal del catálogo */
+.catalogo-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px; /* Espacio uniforme entre tarjetas */
+    padding: 20px;
+}
+
+/* Tarjeta de producto - Estructura clave */
+.producto-card {
+    width: 300px; /* Ancho fijo obligatorio */
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    height: auto; /* Altura automática pero controlada */
+    min-height: 480px; /* Altura mínima para uniformidad */
+}
+
+/* Contenedor de información - Ajuste crítico */
+.producto-info {
+    padding: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribuye el espacio */
+}
+
+/* Botón Ver Detalles - Posicionamiento exacto */
+.producto-comprar {
+    margin-top: 15px;
+    align-self: center;
+    width: 95% !important; /* Prioridad sobre otros estilos */
+    max-width: 200px;
+    padding: 12px 0; /* Padding vertical uniforme */
+    position: relative;
+    bottom: 0;
+}
+
+.producto-nombre, .producto-descripcion, .producto-mensaje {
+    margin: 8px 0 !important; /* Control estricto de márgenes */
+}
+
+.producto-precio-rating {
+    margin: 12px 0 !important;
+}
+.producto-image-container {
+    height: 220px; /* Altura fija para imágenes */
+    overflow: hidden;
+}
+
+.producto-imagen {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+    </style>
+</head>
+<body>
+    <div class="catalog-header">
+        <div class="search-container">
+            <!-- Buscador -->
+            <div class="search-box">
+                <input type="text" id="searchBar" placeholder="Buscar productos..." class="search-input">
+                <span class="search-icon"><i class="fas fa-search"></i></span>
+            </div>
+<!-- Botón de abrir el modal -->
+<button id="openFiltersModal" class="filters-btn">
+    <i class="fas fa-sliders-h"></i> Filtros
+</button>
+
+<!-- Modal de filtros -->
+<div id="filtersModal">
+    <div id="filtersModalContent">
+        <span id="filtersCloseBtn" class="filters-close-btn">&times;</span>
+        <h2>Filtrar Productos</h2>
+        <form id="filtersForm" action="" method="GET">
+            <!-- Grupo de filtros por tallas -->
+            <div class="filters-group">
+                <label for="filtersTallas">Tallas:</label>
+                <select id="filtersTallas" name="tallas">
+                    <option value="">Selecciona una talla</option>
+                    {% for talla in tallas %}
+                    <option value="{{ talla.id_talla }}" {% if request.GET.tallas == talla.id_talla|stringformat:"s" %}selected{% endif %}>
+                        {{ talla.talla }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Grupo de filtros por ramas -->
+            <div class="filters-group">
+                <label for="filtersRamas">Ramas:</label>
+                <select id="filtersRamas" name="ramas">
+                    <option value="">Selecciona una rama</option>
+                    {% for rama in ramas %}
+                    <option value="{{ rama.id_rama }}" {% if request.GET.ramas == rama.id_rama|stringformat:"s" %}selected{% endif %}>
+                        {{ rama.nombre_rama }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Grupo de filtros por categorías -->
+            <div class="filters-group">
+                <label for="filtersCategorias">Categorías:</label>
+                <select id="filtersCategorias" name="categorias">
+                    <option value="">Selecciona una categoría</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id_cat }}" {% if request.GET.categorias == categoria.id_cat|stringformat:"s" %}selected{% endif %}>
+                        {{ categoria.nombre_cat }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Grupo de filtros por precio -->
+            <div class="filters-group">
+                <label for="filtersPrecioMin">Precio mínimo:</label>
+                <input type="number" id="filtersPrecioMin" name="precio_min" step="0.01" value="{{ request.GET.precio_min }}">
+                <label for="filtersPrecioMax">Precio máximo:</label>
+                <input type="number" id="filtersPrecioMax" name="precio_max" step="0.01" value="{{ request.GET.precio_max }}">
+            </div>
+            <!-- Grupo de filtros por favoritos -->
+            <div class="filters-group">
+                <label>
+                    <input type="checkbox" id="filtersFavoritos" name="favoritos" {% if request.GET.favoritos %}checked{% endif %}>
+                    Mostrar solo favoritos
+                </label>
+            </div>
+            <!-- Botones -->
+            <div class="filters-actions">
+                <button type="button" id="clearFiltersBtn" class="clear-filters-btn">Quitar Filtros</button>
+                <button type="submit" id="applyFiltersBtn" class="apply-filters-btn">Aplicar Filtros</button>
+            </div>        
+        </form>
+    </div>
+</div>
+
+
+        </div>
+    </div>
+
+    <div class="catalogo-container">
+        <div id="noProductsMessage" style="display: none; text-align: center; color: #808080; font-weight: bold; margin: 20px;">
+            No hay productos relacionados con tu búsqueda.
+        </div>        
+        {% if productos %}
+        {% for producto in productos %}
+        <div class="producto-card">
+            <div class="producto-image-container">
+                {% if producto.imagen_pro %}
+                    <img src="{{ producto.imagen_pro.url }}" 
+                         alt="{{ producto.nombre_pro }}" 
+                         class="producto-imagen"
+                         onclick="openProductModal('{{ producto.id_pro }}')">
+                         <button class="favorite-btn" data-producto-id="{{ producto.id_pro }}">
+                            <i class="fas fa-heart" style="color: {% if producto.esfavorito %}red{% else %}gray{% endif %};"></i>
+                        </button>
+                {% else %}
+                    <div class="no-image">
+                        <i class="fas fa-image"></i>
+                        <p>No hay imagen disponible</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="producto-info">
+                <div style="display: flex; align-items: center;">
+                    <h3 id="nombre_{{ producto.id_pro }}" class="producto-nombre" style="margin-right: 10px;">
+                        {{ producto.nombre_pro }}
+                    </h3>
+                    {% if request.session.rol_usuario == 'administrador' %}
+                    <!-- Lápiz solo visible para administradores -->
+                    <button onclick="editarCampo('{{ producto.id_pro }}', 'nombre')" style="background: none; border: none; cursor: pointer;">
+                        ✏️
+                    </button>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; margin-top: 5px;">
+                    <p id="detalle_{{ producto.id_pro }}" class="producto-descripcion" style="margin-right: 10px;">
+                        {{ producto.detalle_pro }}
+                    </p>
+                    {% if request.session.rol_usuario == 'administrador' %}
+                    <!-- Lápiz solo visible para administradores -->
+                    <button onclick="editarCampo('{{ producto.id_pro }}', 'detalle')" style="background: none; border: none; cursor: pointer;">
+                        ✏️
+                    </button>
+                    {% endif %}
+                </div>
+                <p class="producto-mensaje">
+                    Disponibles en tallas: 
+                    {% for talla in producto.producto_tallas.all %}
+                        {{ talla.talla.talla }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+                <div class="producto-precio-rating">
+                    <span class="producto-precio">Desde ${{ producto.precio_minimo }}</span>
+                </div>
+                <button class="producto-comprar" onclick="openProductModal('{{ producto.id_pro }}')">
+                    Ver Detalles
+                </button>                
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% else %}
+            <div class="no-products">
+                <i class="fas fa-calendar-times"></i>
+                <p>No hay servicios disponibles en este momento.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalProductTitle">Detalles del Producto</h2>
+                <button class="modal-close" onclick="closeProductModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalProductBody">
+                <p>Cargando información del producto...</p>
+            </div>
+            <button class="btn btn-primary mt-4" id="reserveButton" onclick="redirectToReserve({{ producto_seleccionado.id_pro }})">
+                Reservar Ahora
+            </button>                       
+            
+    </div>    
+
+<script>
+       document.addEventListener('DOMContentLoaded', () => {
+    // Variables generales
+    const modal = document.getElementById('productModal');
+    const modalBody = document.getElementById('modalProductBody');
+    const modalTitle = document.getElementById('modalProductTitle');
+    const reserveButton = document.getElementById('reserveButton'); // Botón de reserva
+
+    /**
+     * Abre el modal del producto con datos dinámicos
+     */
+    function openProductModal(productId) {
+        console.log(`Cargando producto con ID: ${productId}`); // Para verificar el ID
+
+        // Mostrar el modal
+        modal.style.display = 'block';
+
+        // Realizar la solicitud al servidor para obtener los datos del producto
+        fetch(`/catalogo/producto/${productId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Actualizar el contenido del modal con los datos del producto
+                modalTitle.textContent = data.nombre;
+                modalBody.innerHTML = `
+                    <p>${data.descripcion}</p>
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th>Talla</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.tallas.map(talla => `
+                                <tr>
+                                    <td>${talla.talla}</td>
+                                    <td>${talla.cantidad}</td>
+                                    <td>$${talla.precio}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                // Actualizar el botón "Reservar Ahora" con el ID del producto
+                reserveButton.setAttribute('onclick', `redirectToReserve(${productId})`);
+            })
+            .catch(error => {
+                console.error('Error al cargar los detalles del producto:', error);
+                modalBody.innerHTML = `<p>Error al cargar los detalles del producto.</p>`;
+            });
+    }
+
+    /**
+     * Cierra el modal del producto
+     */
+    function closeProductModal() {
+        modal.style.display = 'none';
+    }
+
+    /**
+     * Cierra el modal al hacer clic fuera del contenido
+     */
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    /**
+     * Redirige al formulario de reservas con el ID del producto
+     */
+     function redirectToReserve(productId) {
+    console.log("Producto ID en redirectToReserve:", productId); // Para depuración
+    if (!productId) {
+        console.error("El ID del producto no es válido.");
+        return;
+    }
+    // Redirigir al formulario de reservas con el producto_id en la URL
+    window.location.href = `/citas/?producto_id=${productId}`;
+    }
+
+
+    /**
+     * Filtrar productos en tiempo real
+     */
+    const searchBar = document.getElementById('searchBar');
+    if (searchBar) {
+        searchBar.addEventListener('input', function () {
+            const searchValue = this.value.toLowerCase();
+            const cards = document.querySelectorAll('.producto-card');
+            cards.forEach(card => {
+                const name = card.querySelector('.producto-nombre').textContent.toLowerCase();
+                card.style.display = name.includes(searchValue) ? '' : 'none';
+            });
+        });
+    }
+
+    // Hacer accesibles las funciones globalmente (si es necesario en el HTML)
+    window.openProductModal = openProductModal;
+    window.closeProductModal = closeProductModal;
+    window.redirectToReserve = redirectToReserve;
+});
+
+</script>
+
+<script>
+    // Función para buscar y resaltar palabras coincidentes
+function searchAndHighlight() {
+    const searchBar = document.getElementById('searchBar'); // Input del buscador
+    const searchValue = searchBar.value.toLowerCase(); // Texto en el buscador
+    const cards = document.querySelectorAll('.producto-card'); // Todas las tarjetas de productos
+    let found = false; // Para verificar si hay coincidencias
+
+    // Recorre todas las tarjetas de productos
+    cards.forEach(card => {
+        const nameElement = card.querySelector('.producto-nombre'); // Nombre del producto
+        const descriptionElement = card.querySelector('.producto-descripcion'); // Descripción del producto
+        const nameText = nameElement.textContent.toLowerCase();
+        const descriptionText = descriptionElement.textContent.toLowerCase();
+
+        // Verifica si el texto del buscador está en el nombre o descripción
+        if (nameText.includes(searchValue) || descriptionText.includes(searchValue)) {
+            // Resalta las palabras en el nombre y descripción
+            nameElement.innerHTML = highlightText(nameText, searchValue);
+            descriptionElement.innerHTML = highlightText(descriptionText, searchValue);
+
+            card.style.display = ''; // Mostrar la tarjeta
+            found = true; // Marcar como encontrado
+        } else {
+            card.style.display = 'none'; // Ocultar tarjeta si no coincide
+        }
+    });
+
+    // Mostrar u ocultar mensaje de "No hay productos"
+    const noProductsMessage = document.getElementById('noProductsMessage');
+    if (!found) {
+        noProductsMessage.style.display = 'block'; // Mostrar mensaje
+    } else {
+        noProductsMessage.style.display = 'none'; // Ocultar mensaje
+    }
+}
+
+// Función para resaltar texto
+function highlightText(text, searchValue) {
+    if (!searchValue) return text; // Si el buscador está vacío, no hacer nada
+    const regex = new RegExp(`(${searchValue})`, 'gi'); // Crear una expresión regular para las coincidencias
+    return text.replace(regex, '<span class="highlight">$1</span>'); // Envolver coincidencias en un span
+}
+
+// Escuchar cambios en el buscador
+document.getElementById('searchBar').addEventListener('input', searchAndHighlight);
+
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Elementos del modal
+        const openModalButton = document.getElementById('openFiltersModal');
+        const filtersModal = document.getElementById('filtersModal');
+        const closeModalButton = document.getElementById('filtersCloseBtn');
+        const body = document.body;
+
+        // Elementos del formulario
+        const filtersForm = document.getElementById('filtersForm');
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+
+        // Abrir el modal
+        openModalButton.addEventListener('click', () => {
+            filtersModal.style.display = 'block';
+            body.style.overflow = 'hidden'; // Bloquear scroll
+        });
+
+        // Cerrar el modal al hacer clic en el botón de cierre
+        closeModalButton.addEventListener('click', () => {
+            filtersModal.style.display = 'none';
+            body.style.overflow = ''; // Habilitar scroll
+        });
+
+        // Cerrar el modal al hacer clic fuera del contenido
+        window.addEventListener('click', (event) => {
+            if (event.target === filtersModal) {
+                filtersModal.style.display = 'none';
+                body.style.overflow = ''; // Habilitar scroll
+            }
+        });
+
+        // Limpiar filtros y recargar la página
+        clearFiltersBtn.addEventListener('click', () => {
+            // Reinicia el formulario
+            filtersForm.reset();
+
+            // Elimina los parámetros de la URL y recarga la página
+            const url = new URL(window.location.href);
+            url.search = ''; // Elimina todos los parámetros de búsqueda
+            window.location.href = url.toString(); // Recargar la página
+        });
+
+        // Eliminar filtros automáticamente al recargar la página
+        const url = new URL(window.location.href);
+        if (url.search) {
+            // Si la URL tiene parámetros, eliminarlos
+            url.search = ''; // Limpia los parámetros
+            window.history.replaceState({}, document.title, url.toString()); // Actualiza la URL sin recargar
+        }
+
+        // Aplicar filtros: cierra el modal y permite enviar el formulario
+        filtersForm.addEventListener('submit', (event) => {
+            filtersModal.style.display = 'none'; // Cierra el modal
+            body.style.overflow = ''; // Habilita el scroll
+        });
+
+        // Mantener valores seleccionados en el modal al reabrirlo
+        function restoreFilters() {
+            const params = new URLSearchParams(window.location.search);
+
+            // Restaura los valores del formulario con los parámetros actuales
+            document.getElementById('filtersTallas').value = params.get('tallas') || '';
+            document.getElementById('filtersRamas').value = params.get('ramas') || '';
+            document.getElementById('filtersCategorias').value = params.get('categorias') || '';
+            document.getElementById('filtersPrecioMin').value = params.get('precio_min') || '';
+            document.getElementById('filtersPrecioMax').value = params.get('precio_max') || '';
+            document.getElementById('filtersFavoritos').checked = params.has('favoritos');
+        }
+
+        // Llama a restoreFilters para inicializar el estado del formulario
+        restoreFilters();
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const favoriteButtons = document.querySelectorAll('.favorite-btn');
+
+    favoriteButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productoId = button.getAttribute('data-producto-id');
+            const icon = button.querySelector('i');
+
+            fetch(`/catalogo/favorito/${productoId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'), // CSRF token
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.favorito) {
+                    icon.style.color = 'red'; // Marcado como favorito
+                } else {
+                    icon.style.color = 'gray'; // Desmarcado como favorito
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+
+    // Obtener el token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+
+<script>
+    function editarCampo(productoId, campo) {
+        const campoElemento = document.getElementById(campo + '_' + productoId);
+        const valorActual = campoElemento.innerText;
+        campoElemento.innerHTML = `
+            <input id="input_${campo}_${productoId}" value="${valorActual}" style="padding: 5px; width: 80%;">
+            <button onclick="guardarCambio('${productoId}', '${campo}')" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-left: 5px; cursor: pointer;">
+                Guardar
+            </button>
+        `;
+    }
+    
+    function guardarCambio(productoId, campo) {
+        const nuevoValor = document.getElementById('input_' + campo + '_' + productoId).value;
+        
+        fetch(`/catalogo/actualizar-producto/${productoId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')  // Necesitamos el token CSRF
+            },
+            body: JSON.stringify({ campo: campo, valor: nuevoValor })
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();  // Refrescar la página
+            } else {
+                alert('Error al actualizar');
+            }
+        });
+    }
+    
+    // Función para leer CSRF Token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+    
+
+</body>
+</html>
+{% endblock %}
