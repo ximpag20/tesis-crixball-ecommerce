@@ -155,9 +155,10 @@ class ConversationModelsGrpcTransport(ConversationModelsTransport):
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
                 This argument is ignored if a ``channel`` instance is provided.
-            credentials_file (Optional[str]): A file with credentials that can
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
                 This argument is ignored if a ``channel`` instance is provided.
+                This argument will be removed in the next major version of this library.
             scopes (Optional(Sequence[str])): A list of scopes. This argument is
                 ignored if a ``channel`` instance is provided.
             channel (Optional[Union[grpc.Channel, Callable[..., grpc.Channel]]]):
@@ -291,9 +292,10 @@ class ConversationModelsGrpcTransport(ConversationModelsTransport):
                 credentials identify this application to the service. If
                 none are specified, the client will attempt to ascertain
                 the credentials from the environment.
-            credentials_file (Optional[str]): A file with credentials that can
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
-                This argument is mutually exclusive with credentials.
+                This argument is mutually exclusive with credentials.  This argument will be
+                removed in the next major version of this library.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
@@ -357,10 +359,10 @@ class ConversationModelsGrpcTransport(ConversationModelsTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``:
-           [CreateConversationModelOperationMetadata][google.cloud.dialogflow.v2.CreateConversationModelOperationMetadata]
-        -  ``response``:
-           [ConversationModel][google.cloud.dialogflow.v2.ConversationModel]
+        - ``metadata``:
+          [CreateConversationModelOperationMetadata][google.cloud.dialogflow.v2.CreateConversationModelOperationMetadata]
+        - ``response``:
+          [ConversationModel][google.cloud.dialogflow.v2.ConversationModel]
 
         Returns:
             Callable[[~.CreateConversationModelRequest],
@@ -453,10 +455,10 @@ class ConversationModelsGrpcTransport(ConversationModelsTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``:
-           [DeleteConversationModelOperationMetadata][google.cloud.dialogflow.v2.DeleteConversationModelOperationMetadata]
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``:
+          [DeleteConversationModelOperationMetadata][google.cloud.dialogflow.v2.DeleteConversationModelOperationMetadata]
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Returns:
             Callable[[~.DeleteConversationModelRequest],
@@ -494,10 +496,10 @@ class ConversationModelsGrpcTransport(ConversationModelsTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``:
-           [DeployConversationModelOperationMetadata][google.cloud.dialogflow.v2.DeployConversationModelOperationMetadata]
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``:
+          [DeployConversationModelOperationMetadata][google.cloud.dialogflow.v2.DeployConversationModelOperationMetadata]
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Returns:
             Callable[[~.DeployConversationModelRequest],
@@ -528,18 +530,18 @@ class ConversationModelsGrpcTransport(ConversationModelsTransport):
         Undeploys a model. If the model is not deployed this method has
         no effect. If the model is currently being used:
 
-        -  For article suggestion, article suggestion will fallback to
-           the default model if model is undeployed.
+        - For article suggestion, article suggestion will fallback to
+          the default model if model is undeployed.
 
         This method is a `long-running
         operation <https://cloud.google.com/dialogflow/es/docs/how/long-running-operations>`__.
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``:
-           [UndeployConversationModelOperationMetadata][google.cloud.dialogflow.v2.UndeployConversationModelOperationMetadata]
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``:
+          [UndeployConversationModelOperationMetadata][google.cloud.dialogflow.v2.UndeployConversationModelOperationMetadata]
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Returns:
             Callable[[~.UndeployConversationModelRequest],

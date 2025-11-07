@@ -452,19 +452,40 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Cargar un producto preseleccionado al cargar la página
      */
-    const productoSeleccionadoId = productoInput.value || new URLSearchParams(window.location.search).get('producto_id');
-    if (productoSeleccionadoId) {
-        fetch(`/catalogo/producto/${productoSeleccionadoId}/`)  // Ajusta según tu endpoint
-            .then(response => response.json())
-            .then(data => {
-                const tallas = data.tallas.map(t => t.talla);
-                const cantidades = Object.fromEntries(
-                    data.tallas.map(t => [t.talla, t.cantidad])
-                );
-                cargarProducto(data.id, data.nombre, data.imagen, tallas, cantidades);
-            })
-            .catch(error => console.error("Error al cargar el producto preseleccionado:", error));
-    }
+const urlParams = new URLSearchParams(window.location.search);
+const productoSeleccionadoId = productoInput.value || urlParams.get('producto_id');
+const productoSaleorId = urlParams.get('producto_saleor_id');
+
+if (productoSaleorId) {
+    // Es un producto de Saleor
+    console.log("Cargando producto de Saleor:", productoSaleorId);
+    fetch(`/citas/producto-saleor/${productoSaleorId}/`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Datos del producto Saleor:", data);
+            const tallas = data.tallas.map(t => t.talla);
+            const cantidades = Object.fromEntries(
+                data.tallas.map(t => [t.talla, t.cantidad])
+            );
+            cargarProducto(data.id, data.nombre, data.imagen, tallas, cantidades);
+        })
+        .catch(error => console.error("Error al cargar el producto de Saleor:", error));
+        
+} else if (productoSeleccionadoId) {
+    // Es un producto Django
+    console.log("Cargando producto Django:", productoSeleccionadoId);
+    fetch(`/catalogo/producto/${productoSeleccionadoId}/`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Datos del producto Django:", data);
+            const tallas = data.tallas.map(t => t.talla);
+            const cantidades = Object.fromEntries(
+                data.tallas.map(t => [t.talla, t.cantidad])
+            );
+            cargarProducto(data.id, data.nombre, data.imagen, tallas, cantidades);
+        })
+        .catch(error => console.error("Error al cargar el producto Django:", error));
+}
 });
 
 </script>

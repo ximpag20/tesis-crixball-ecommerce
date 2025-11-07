@@ -41,6 +41,7 @@ class Producto(models.Model):
     detalle_pro = models.TextField()
     imagen_pro = CloudinaryField('image', null=True, blank=True)  # Usa CloudinaryField
     id_rama = models.ForeignKey(Rama, on_delete=models.CASCADE, db_column='id_rama')
+    saleor_product_id = models.CharField(max_length=100, null=True, blank=True, unique=True)  # NUEVO CAMPO
     def __str__(self):
         return self.nombre_pro
     
@@ -55,6 +56,35 @@ class ProductoTalla(models.Model):
 
     def __str__(self):
         return f"{self.producto.nombre_pro} - {self.talla.talla} (Cantidad: {self.cantidad_disponible}, Precio: {self.precio})"
+    
+    def sincronizar_stock_con_saleor(self):
+        """
+        Sincroniza el stock de Django con Saleor cuando cambia
+        """
+        if not self.producto.saleor_product_id:
+            return False
+        
+        from .saleor_api_service import SaleorAPIService
+        
+        # Obtener producto de Saleor
+        saleor_service = SaleorAPIService()
+        producto_saleor = saleor_service.obtener_producto_por_id(self.producto.saleor_product_id)
+        
+        if not producto_saleor:
+            return False
+        
+        # Buscar la variante correspondiente a esta talla
+        for talla_data in producto_saleor.get('tallas', []):
+            if talla_data['talla'] == self.talla.talla:
+                variante_id = talla_data.get('variante_id')
+                if variante_id:
+                    # Actualizar stock en Saleor
+                    return saleor_service.actualizar_stock_variante(
+                        variante_id, 
+                        self.cantidad_disponible
+                    )
+        
+        return False
 
     class Meta:
         unique_together = ('producto', 'talla')  # Evitar duplicados

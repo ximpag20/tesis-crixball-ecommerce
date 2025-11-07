@@ -11,49 +11,100 @@ import json
 #uso de decoradores
 @login_required
 def Catalogo(request):
-    productos = Producto.objects.annotate(
-        precio_minimo=Min('producto_tallas__precio'),
-        total_stock=Sum('producto_tallas__cantidad_disponible')
-    ).filter(total_stock__gt=0)
-
+    # Importar el servicio de Saleor
+    from .saleor_api_service import SaleorAPIService
+    
+    # Crear instancia del servicio
+    saleor_service = SaleorAPIService()
+    
+    # Obtener productos desde Saleor
+    productos_saleor = saleor_service.obtener_productos(first=100)
+    
+    # Mapear productos de Saleor con productos de Django
+    productos_mapeados = []
+    for producto_saleor in productos_saleor:
+        try:
+            # Buscar el producto en Django por su saleor_product_id
+            producto_django = Producto.objects.get(saleor_product_id=producto_saleor['id'])
+            producto_saleor['id_django'] = producto_django.id_pro
+            
+            # Usar la imagen de Django/Cloudinary
+            if producto_django.imagen_pro:
+                producto_saleor['imagen'] = producto_django.imagen_pro.url
+            
+            # 🔥 NUEVO: Filtrar tallas sin stock
+            tallas_con_stock = []
+            for talla in producto_saleor['tallas']:
+                # Verificar stock en Django (fuente de verdad)
+                try:
+                    producto_talla = ProductoTalla.objects.get(
+                        producto=producto_django,
+                        talla__talla=talla['talla']
+                    )
+                    if producto_talla.cantidad_disponible > 0:
+                        # Actualizar con stock real de Django
+                        talla['stock'] = producto_talla.cantidad_disponible
+                        talla['cantidad'] = producto_talla.cantidad_disponible
+                        tallas_con_stock.append(talla)
+                except ProductoTalla.DoesNotExist:
+                    pass
+            
+            # 🔥 NUEVO: Solo mostrar producto si tiene tallas con stock
+            if not tallas_con_stock:
+                print(f"⚠️ Producto sin stock: {producto_saleor['nombre']}")
+                continue
+            
+            producto_saleor['tallas'] = tallas_con_stock
+            
+            print(f"✅ Mapeado: {producto_saleor['nombre']} -> ID Django: {producto_django.id_pro}")
+        except Producto.DoesNotExist:
+            print(f"⚠️ Producto de Saleor no encontrado en Django: {producto_saleor['nombre']}")
+            continue
+        
+        productos_mapeados.append(producto_saleor)
+        
+    print(f"📊 Total productos mapeados: {len(productos_mapeados)}")  # NUEV
+    
+    # Obtener filtros del frontend
     tallas = Talla.objects.all()
     ramas = Rama.objects.all()
     categorias = Categoria.objects.all()
-
-    # Aplicar filtros
-    talla_id = request.GET.get('tallas')
-    rama_id = request.GET.get('ramas')
-    categoria_id = request.GET.get('categorias')
+    
+    # Aplicar filtros básicos si es necesario
+    talla_filtro = request.GET.get('tallas')
     precio_min = request.GET.get('precio_min')
     precio_max = request.GET.get('precio_max')
-    favoritos = request.GET.get('favoritos')
-
-    if talla_id:
-        productos = productos.filter(producto_tallas__talla__id_talla=talla_id)
-    if rama_id:
-        productos = productos.filter(id_rama=rama_id)
-    if categoria_id:
-        productos = productos.filter(id_rama__id_cat=categoria_id)
+    
+    # Filtrar productos según criterios
+    productos_filtrados = productos_mapeados
+    
+    if talla_filtro:
+        productos_filtrados = [
+            p for p in productos_filtrados 
+            if any(t['talla'] == talla_filtro for t in p['tallas'])
+        ]
+    
     if precio_min:
-        productos = productos.filter(producto_tallas__precio__gte=precio_min)
+        precio_min_float = float(precio_min)
+        productos_filtrados = [
+            p for p in productos_filtrados 
+            if p['precio_minimo'] >= precio_min_float
+        ]
+    
     if precio_max:
-        productos = productos.filter(producto_tallas__precio__lte=precio_max)
-    if favoritos:
-        productos = productos.filter(favoritos__usuario=request.user)  # Lógica para favoritos
-
-    # Agregar estado de favorito a cada producto
-    favoritos_ids = Favorito.objects.filter(usuario=request.user).values_list('producto_id', flat=True)
-    for producto in productos:
-        producto.esfavorito = producto.id_pro in favoritos_ids
-
+        precio_max_float = float(precio_max)
+        productos_filtrados = [
+            p for p in productos_filtrados 
+            if p['precio_minimo'] <= precio_max_float
+        ]
+    
     return render(request, 'catalogo/index.html', {
-        'productos': productos,
+        'productos': productos_filtrados,
         'tallas': tallas,
         'ramas': ramas,
         'categorias': categorias,
+        'usando_saleor': True,
     })
-
-
 @login_required
 def administrar_productos(request):
     success_message = None  # Mensaje de éxito

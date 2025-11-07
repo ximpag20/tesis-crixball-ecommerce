@@ -1,4 +1,4 @@
-#!C:\git\Crixball\venv\Scripts\python.exe
+#!C:\git\tesis-crixball-ecommerce\Crixball\venv\Scripts\python.exe
 
 import sys
 import json

@@ -366,9 +366,10 @@ class AnswerRecordsRestTransport(_BaseAnswerRecordsRestTransport):
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
 
-            credentials_file (Optional[str]): A file with credentials that can
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
-                This argument is ignored if ``channel`` is provided.
+                This argument is ignored if ``channel`` is provided. This argument will be
+                removed in the next major version of this library.
             scopes (Optional(Sequence[str])): A list of scopes. This argument is
                 ignored if ``channel`` is provided.
             client_cert_source_for_mtls (Callable[[], Tuple[bytes, bytes]]): Client
@@ -616,13 +617,13 @@ class AnswerRecordsRestTransport(_BaseAnswerRecordsRestTransport):
 
                 Currently, answer record includes:
 
-                -  human agent assistant article suggestion
-                -  human agent assistant faq article
+                - human agent assistant article suggestion
+                - human agent assistant faq article
 
                 It doesn't include:
 
-                -  ``DetectIntent`` intent matching
-                -  ``DetectIntent`` knowledge
+                - ``DetectIntent`` intent matching
+                - ``DetectIntent`` knowledge
 
                 Answer records are not related to the conversation
                 history in the Dialogflow Console. A Record is generated

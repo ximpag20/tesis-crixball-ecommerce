@@ -1,16 +1,19 @@
-import resource
+try:
+    import resource
+    RLIMIT_TYPE = resource.RLIMIT_DATA
+except (ImportError, AttributeError):
+    resource = None  # Windows no tiene módulo 'resource'
+    RLIMIT_TYPE = None
 
 from django.core.exceptions import ImproperlyConfigured
 
-RLIMIT_TYPE = resource.RLIMIT_DATA
+
+def is_soft_limit_set_without_hard_limit(soft_limit, hard_limit):
+    return soft_limit is not None and hard_limit is None
 
 
-def is_soft_limit_set_without_hard_limit(soft_limit_in_MB, hard_limit_in_MB):
-    return soft_limit_in_MB is not None and hard_limit_in_MB is None
-
-
-def is_hard_limit_set_without_soft_limit(soft_limit_in_MB, hard_limit_in_MB):
-    return soft_limit_in_MB is None and hard_limit_in_MB is not None
+def is_hard_limit_set_without_soft_limit(soft_limit, hard_limit):
+    return hard_limit is not None and soft_limit is None
 
 
 def validate_and_set_rlimit(soft_limit_in_MB, hard_limit_in_MB):
@@ -22,6 +25,10 @@ def validate_and_set_rlimit(soft_limit_in_MB, hard_limit_in_MB):
     the function sets the limits to infinity (no limit).
     If the soft limit is reached, the process will raise a `MemoryError`.
     """
+    
+    # Si estamos en Windows, no hacer nada (resource no existe)
+    if resource is None:
+        return
 
     try:
         soft_limit_in_MB = int(soft_limit_in_MB) if soft_limit_in_MB else None

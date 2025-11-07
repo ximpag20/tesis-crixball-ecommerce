@@ -77,6 +77,8 @@ def Citas(request):
                 producto_talla.cantidad_disponible -= reserva.cantidad_reservada
                 producto_talla.save()
 
+                producto_talla.sincronizar_stock_con_saleor()
+
                 reserva.estado_reserva = "Pendiente"
                 reserva.save()
 
@@ -147,6 +149,8 @@ def listar_reservas(request):
             producto_talla.cantidad_disponible += reserva.cantidad_reservada
             producto_talla.save()
 
+            producto_talla.sincronizar_stock_con_saleor()
+            
             # Eliminar la reserva
             reserva.delete()
             messages.success(request, "Reserva cancelada exitosamente.", extra_tags='reservas_cliente')
@@ -223,6 +227,7 @@ def ver_todas_reservas(request):
             if reserva.estado_reserva != "Rechazada":
                 producto_talla.cantidad_disponible += reserva.cantidad_reservada
                 producto_talla.save()
+                producto_talla.sincronizar_stock_con_saleor()
                 reserva.estado_reserva = "Rechazada"
                 reserva.save()
                 Notification.objects.create(
@@ -369,3 +374,87 @@ def eliminar_reserva(request, reserva_id):
         reserva.delete()
         #messages.success(request, "Reserva eliminada exitosamente.")
     return redirect('ver_todas_reservas')  # o el nombre de la vista/lista donde se muestran las reservas
+
+"""@login_required
+def obtener_producto_saleor(request, producto_saleor_id):
+    
+    from catalogo.saleor_api_service import SaleorAPIService
+    from catalogo.models import Producto
+    
+    try:
+        # Obtener producto de Django usando el saleor_product_id
+        producto_django = Producto.objects.get(saleor_product_id=producto_saleor_id)
+        
+        # Obtener datos adicionales de Saleor
+        saleor_service = SaleorAPIService()
+        producto_saleor = saleor_service.obtener_producto_por_id(producto_saleor_id)
+        
+        if not producto_saleor:
+            return JsonResponse({'error': 'Producto no encontrado en Saleor'}, status=404)
+        
+        # Preparar respuesta
+        producto_data = {
+            'id': producto_django.id_pro,  # ID de Django para el formulario
+            'nombre': producto_django.nombre_pro,
+            'descripcion': producto_django.detalle_pro,
+            'imagen': producto_django.imagen_pro.url if producto_django.imagen_pro else '/static/images/placeholder.png',
+            'tallas': [
+                {
+                    'talla': talla['talla'],
+                    'cantidad': talla['stock'],
+                    'precio': talla['precio'],
+                    'stock': talla['stock']
+                }
+                for talla in producto_saleor.get('tallas', [])
+            ]
+        }
+        
+        return JsonResponse(producto_data)
+        
+    except Producto.DoesNotExist:
+        return JsonResponse({'error': 'Producto no encontrado en Django'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+"""
+
+@login_required
+def obtener_producto_saleor(request, producto_saleor_id):
+    """
+    Endpoint para obtener los datos de un producto de Saleor en formato JSON.
+    USA EL STOCK REAL DE DJANGO, NO DE SALEOR
+    """
+    from catalogo.models import Producto
+    
+    try:
+        # Obtener producto de Django usando el saleor_product_id
+        producto_django = Producto.objects.get(saleor_product_id=producto_saleor_id)
+        
+        # 🔥 OBTENER TALLAS DIRECTAMENTE DE DJANGO (fuente de verdad del stock)
+        tallas_django = ProductoTalla.objects.filter(
+            producto=producto_django,
+            cantidad_disponible__gt=0  # Solo tallas con stock
+        ).select_related('talla')
+        
+        # Preparar respuesta con datos de Django
+        producto_data = {
+            'id': producto_django.id_pro,  # ID de Django para el formulario
+            'nombre': producto_django.nombre_pro,
+            'descripcion': producto_django.detalle_pro,
+            'imagen': producto_django.imagen_pro.url if producto_django.imagen_pro else '/static/images/placeholder.png',
+            'tallas': [
+                {
+                    'talla': pt.talla.talla,
+                    'cantidad': pt.cantidad_disponible,  # Stock real de Django
+                    'precio': pt.precio,
+                    'stock': pt.cantidad_disponible  # Stock real de Django
+                }
+                for pt in tallas_django
+            ]
+        }
+        
+        return JsonResponse(producto_data)
+        
+    except Producto.DoesNotExist:
+        return JsonResponse({'error': 'Producto no encontrado en Django'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

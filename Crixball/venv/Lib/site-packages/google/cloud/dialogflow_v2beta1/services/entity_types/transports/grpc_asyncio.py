@@ -152,8 +152,9 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
                 credentials identify this application to the service. If
                 none are specified, the client will attempt to ascertain
                 the credentials from the environment.
-            credentials_file (Optional[str]): A file with credentials that can
-                be loaded with :func:`google.auth.load_credentials_from_file`.
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
+                be loaded with :func:`google.auth.load_credentials_from_file`. This argument will be
+                removed in the next major version of this library.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
@@ -204,9 +205,10 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
                 This argument is ignored if a ``channel`` instance is provided.
-            credentials_file (Optional[str]): A file with credentials that can
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
                 This argument is ignored if a ``channel`` instance is provided.
+                This argument will be removed in the next major version of this library.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
@@ -516,10 +518,10 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``: An empty `Struct
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
-        -  ``response``:
-           [BatchUpdateEntityTypesResponse][google.cloud.dialogflow.v2beta1.BatchUpdateEntityTypesResponse]
+        - ``metadata``: An empty `Struct
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
+        - ``response``:
+          [BatchUpdateEntityTypesResponse][google.cloud.dialogflow.v2beta1.BatchUpdateEntityTypesResponse]
 
         Note: You should always train an agent prior to sending it
         queries. See the `training
@@ -558,10 +560,10 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``: An empty `Struct
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``: An empty `Struct
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Note: You should always train an agent prior to sending it
         queries. See the `training
@@ -600,10 +602,10 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``: An empty `Struct
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``: An empty `Struct
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Note: You should always train an agent prior to sending it
         queries. See the `training
@@ -648,10 +650,10 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``: An empty `Struct
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``: An empty `Struct
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Returns:
             Callable[[~.BatchUpdateEntitiesRequest],
@@ -686,10 +688,10 @@ class EntityTypesGrpcAsyncIOTransport(EntityTypesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``: An empty `Struct
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
-        -  ``response``: An `Empty
-           message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
+        - ``metadata``: An empty `Struct
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#struct>`__
+        - ``response``: An `Empty
+          message <https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty>`__
 
         Note: You should always train an agent prior to sending it
         queries. See the `training

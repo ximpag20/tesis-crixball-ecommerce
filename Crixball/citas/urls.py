@@ -13,4 +13,5 @@ urlpatterns = [
     path('notificaciones/obtener/', views.obtener_notificaciones, name='obtener_notificaciones'),
     path('verificar-reserva/', views.verificar_reserva, name='verificar_reserva'),
     path('eliminar-reserva/<int:reserva_id>/', views.eliminar_reserva, name='eliminar_reserva'),
+    path('producto-saleor/<str:producto_saleor_id>/', views.obtener_producto_saleor, name='obtener_producto_saleor'),
 ]

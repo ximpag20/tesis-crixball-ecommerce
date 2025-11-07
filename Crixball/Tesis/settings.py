@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'index',
     'autenticacion',
     'acerca',
-    'catalogo',
+    'catalogo.apps.CatalogoConfig', 
     'citas',
     'contactos',
     'Tesis',
@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'chatbot',
     'cloudinary',
     'cloudinary_storage',
+    
 ]
 
 MIDDLEWARE = [

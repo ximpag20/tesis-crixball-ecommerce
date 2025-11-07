@@ -490,62 +490,98 @@
         </div>        
         {% if productos %}
         {% for producto in productos %}
-        <div class="producto-card">
-            <div class="producto-image-container">
-                {% if producto.imagen_pro %}
-                    <img src="{{ producto.imagen_pro.url }}" 
-                         alt="{{ producto.nombre_pro }}" 
-                         class="producto-imagen"
-                         onclick="openProductModal('{{ producto.id_pro }}')">
-                         <button class="favorite-btn" data-producto-id="{{ producto.id_pro }}">
-                            <i class="fas fa-heart" style="color: {% if producto.esfavorito %}red{% else %}gray{% endif %};"></i>
-                        </button>
-                {% else %}
-                    <div class="no-image">
-                        <i class="fas fa-image"></i>
-                        <p>No hay imagen disponible</p>
-                    </div>
+<div class="producto-card">
+    <div class="producto-image-container">
+        {% if usando_saleor %}
+            {# Datos desde Saleor #}
+            {% if producto.imagen %}
+                <img src="{{ producto.imagen }}" 
+                     alt="{{ producto.nombre }}" 
+                     class="producto-imagen"
+                     onclick="openProductModalSaleor('{{ producto.id }}', '{{ producto.nombre }}', {{ producto.tallas|safe }})">
+                <button class="favorite-btn" data-producto-id="{{ producto.id }}">
+                    <i class="fas fa-heart" style="color: gray;"></i>
+                </button>
+            {% else %}
+                <div class="no-image">
+                    <i class="fas fa-image"></i>
+                    <p>No hay imagen disponible</p>
+                </div>
+            {% endif %}
+        {% else %}
+            {# Datos desde Django (código original) #}
+            {% if producto.imagen_pro %}
+                <img src="{{ producto.imagen_pro.url }}" 
+                     alt="{{ producto.nombre_pro }}" 
+                     class="producto-imagen"
+                     onclick="openProductModal('{{ producto.id_pro }}')">
+                <button class="favorite-btn" data-producto-id="{{ producto.id_pro }}">
+                    <i class="fas fa-heart" style="color: {% if producto.esfavorito %}red{% else %}gray{% endif %};"></i>
+                </button>
+            {% else %}
+                <div class="no-image">
+                    <i class="fas fa-image"></i>
+                    <p>No hay imagen disponible</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    <div class="producto-info">
+        {% if usando_saleor %}
+            {# Información desde Saleor #}
+            <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+            <p class="producto-descripcion">{{ producto.descripcion|truncatewords:15 }}</p>
+            <p class="producto-mensaje">
+                Disponibles en tallas: 
+                {% for talla in producto.tallas %}
+                    {{ talla.talla }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            <div class="producto-precio-rating">
+                <span class="producto-precio">Desde ${{ producto.precio_minimo|floatformat:2 }}</span>
+            </div>
+            <button class="producto-comprar" onclick="openProductModalSaleor('{{ producto.id }}', '{{ producto.nombre }}', {{ producto.tallas|safe }})">
+                Ver Detalles
+            </button>
+        {% else %}
+            {# Información desde Django (código original) #}
+            <div style="display: flex; align-items: center;">
+                <h3 id="nombre_{{ producto.id_pro }}" class="producto-nombre" style="margin-right: 10px;">
+                    {{ producto.nombre_pro }}
+                </h3>
+                {% if request.session.rol_usuario == 'administrador' %}
+                <button onclick="editarCampo('{{ producto.id_pro }}', 'nombre')" style="background: none; border: none; cursor: pointer;">
+                    ✏️
+                </button>
                 {% endif %}
             </div>
-            
-            <div class="producto-info">
-                <div style="display: flex; align-items: center;">
-                    <h3 id="nombre_{{ producto.id_pro }}" class="producto-nombre" style="margin-right: 10px;">
-                        {{ producto.nombre_pro }}
-                    </h3>
-                    {% if request.session.rol_usuario == 'administrador' %}
-                    <!-- Lápiz solo visible para administradores -->
-                    <button onclick="editarCampo('{{ producto.id_pro }}', 'nombre')" style="background: none; border: none; cursor: pointer;">
-                        ✏️
-                    </button>
-                    {% endif %}
-                </div>
-                <div style="display: flex; align-items: center; margin-top: 5px;">
-                    <p id="detalle_{{ producto.id_pro }}" class="producto-descripcion" style="margin-right: 10px;">
-                        {{ producto.detalle_pro }}
-                    </p>
-                    {% if request.session.rol_usuario == 'administrador' %}
-                    <!-- Lápiz solo visible para administradores -->
-                    <button onclick="editarCampo('{{ producto.id_pro }}', 'detalle')" style="background: none; border: none; cursor: pointer;">
-                        ✏️
-                    </button>
-                    {% endif %}
-                </div>
-                <p class="producto-mensaje">
-                    Disponibles en tallas: 
-                    {% for talla in producto.producto_tallas.all %}
-                        {{ talla.talla.talla }}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
+            <div style="display: flex; align-items: center; margin-top: 5px;">
+                <p id="detalle_{{ producto.id_pro }}" class="producto-descripcion" style="margin-right: 10px;">
+                    {{ producto.detalle_pro }}
                 </p>
-                <div class="producto-precio-rating">
-                    <span class="producto-precio">Desde ${{ producto.precio_minimo }}</span>
-                </div>
-                <button class="producto-comprar" onclick="openProductModal('{{ producto.id_pro }}')">
-                    Ver Detalles
-                </button>                
+                {% if request.session.rol_usuario == 'administrador' %}
+                <button onclick="editarCampo('{{ producto.id_pro }}', 'detalle')" style="background: none; border: none; cursor: pointer;">
+                    ✏️
+                </button>
+                {% endif %}
             </div>
-        </div>
-        {% endfor %}
+            <p class="producto-mensaje">
+                Disponibles en tallas: 
+                {% for talla in producto.producto_tallas.all %}
+                    {{ talla.talla.talla }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            <div class="producto-precio-rating">
+                <span class="producto-precio">Desde ${{ producto.precio_minimo }}</span>
+            </div>
+            <button class="producto-comprar" onclick="openProductModal('{{ producto.id_pro }}')">
+                Ver Detalles
+            </button>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
         
         {% else %}
             <div class="no-products">
@@ -580,7 +616,7 @@
     const reserveButton = document.getElementById('reserveButton'); // Botón de reserva
 
     /**
-     * Abre el modal del producto con datos dinámicos
+     * Abre el modal del producto con datos dinámicos (Django)
      */
     function openProductModal(productId) {
         console.log(`Cargando producto con ID: ${productId}`); // Para verificar el ID
@@ -646,18 +682,72 @@
     };
 
     /**
-     * Redirige al formulario de reservas con el ID del producto
+     * Redirige al formulario de reservas con el ID del producto (Django)
      */
-     function redirectToReserve(productId) {
-    console.log("Producto ID en redirectToReserve:", productId); // Para depuración
-    if (!productId) {
-        console.error("El ID del producto no es válido.");
-        return;
-    }
-    // Redirigir al formulario de reservas con el producto_id en la URL
-    window.location.href = `/citas/?producto_id=${productId}`;
+    function redirectToReserve(productId) {
+        console.log("Producto ID en redirectToReserve:", productId);
+        if (!productId) {
+            console.error("El ID del producto no es válido.");
+            return;
+        }
+        // Redirigir al formulario de reservas con el producto_id en la URL
+        window.location.href = `/citas/?producto_id=${productId}`;
     }
 
+    /**
+     * Abre el modal con datos de Saleor
+     */
+    function openProductModalSaleor(productSaleorId, productName, tallasJson) {
+        console.log(`Cargando producto de Saleor con ID: ${productSaleorId}`);
+        console.log("Nombre del producto:", productName);
+        console.log("Tallas recibidas:", tallasJson);
+        
+        // Parsear las tallas si vienen como string
+        let tallas = typeof tallasJson === 'string' ? JSON.parse(tallasJson) : tallasJson;
+        
+        // Mostrar el modal
+        modal.style.display = 'block';
+        
+        // Actualizar el título del modal
+        modalTitle.textContent = productName;
+        
+        // Actualizar el contenido del modal con la tabla de tallas
+        modalBody.innerHTML = `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Talla</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tallas.map(talla => `
+                        <tr>
+                            <td>${talla.talla}</td>
+                            <td>${talla.stock}</td>
+                            <td>$${parseFloat(talla.precio).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        
+        // Actualizar el onclick del botón con el ID de Saleor
+        reserveButton.setAttribute('onclick', `redirectToReserveSaleor('${productSaleorId}')`);
+    }
+
+    /**
+     * Redirige a reservas con producto de Saleor
+     */
+    function redirectToReserveSaleor(productId) {
+        console.log("Producto Saleor ID:", productId);
+        // Aquí puedes implementar la lógica para integrar con tu sistema de reservas
+        window.location.href = `/citas/?producto_saleor_id=${productId}`;
+        
+        // Si aún no has integrado Saleor con reservas, puedes comentar la línea anterior y usar:
+        // alert('Funcionalidad de reservas con Saleor en desarrollo. ID del producto: ' + productId);
+    }
 
     /**
      * Filtrar productos en tiempo real
@@ -674,14 +764,15 @@
         });
     }
 
-    // Hacer accesibles las funciones globalmente (si es necesario en el HTML)
+    // Hacer accesibles las funciones globalmente
     window.openProductModal = openProductModal;
     window.closeProductModal = closeProductModal;
     window.redirectToReserve = redirectToReserve;
+    window.openProductModalSaleor = openProductModalSaleor;
+    window.redirectToReserveSaleor = redirectToReserveSaleor;
 });
 
 </script>
-
 <script>
     // Función para buscar y resaltar palabras coincidentes
 function searchAndHighlight() {

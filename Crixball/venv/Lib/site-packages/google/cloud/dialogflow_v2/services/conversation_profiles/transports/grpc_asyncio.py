@@ -154,8 +154,9 @@ class ConversationProfilesGrpcAsyncIOTransport(ConversationProfilesTransport):
                 credentials identify this application to the service. If
                 none are specified, the client will attempt to ascertain
                 the credentials from the environment.
-            credentials_file (Optional[str]): A file with credentials that can
-                be loaded with :func:`google.auth.load_credentials_from_file`.
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
+                be loaded with :func:`google.auth.load_credentials_from_file`. This argument will be
+                removed in the next major version of this library.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
@@ -206,9 +207,10 @@ class ConversationProfilesGrpcAsyncIOTransport(ConversationProfilesTransport):
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
                 This argument is ignored if a ``channel`` instance is provided.
-            credentials_file (Optional[str]): A file with credentials that can
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
                 This argument is ignored if a ``channel`` instance is provided.
+                This argument will be removed in the next major version of this library.
             scopes (Optional[Sequence[str]]): A optional list of scopes needed for this
                 service. These are only used when credentials are not specified and
                 are passed to :func:`google.auth.default`.
@@ -538,10 +540,10 @@ class ConversationProfilesGrpcAsyncIOTransport(ConversationProfilesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``:
-           [SetSuggestionFeatureConfigOperationMetadata][google.cloud.dialogflow.v2.SetSuggestionFeatureConfigOperationMetadata]
-        -  ``response``:
-           [ConversationProfile][google.cloud.dialogflow.v2.ConversationProfile]
+        - ``metadata``:
+          [SetSuggestionFeatureConfigOperationMetadata][google.cloud.dialogflow.v2.SetSuggestionFeatureConfigOperationMetadata]
+        - ``response``:
+          [ConversationProfile][google.cloud.dialogflow.v2.ConversationProfile]
 
         If a long running operation to add or update suggestion feature
         config for the same conversation profile, participant role and
@@ -587,10 +589,10 @@ class ConversationProfilesGrpcAsyncIOTransport(ConversationProfilesTransport):
         The returned ``Operation`` type has the following
         method-specific fields:
 
-        -  ``metadata``:
-           [ClearSuggestionFeatureConfigOperationMetadata][google.cloud.dialogflow.v2.ClearSuggestionFeatureConfigOperationMetadata]
-        -  ``response``:
-           [ConversationProfile][google.cloud.dialogflow.v2.ConversationProfile]
+        - ``metadata``:
+          [ClearSuggestionFeatureConfigOperationMetadata][google.cloud.dialogflow.v2.ClearSuggestionFeatureConfigOperationMetadata]
+        - ``response``:
+          [ConversationProfile][google.cloud.dialogflow.v2.ConversationProfile]
 
         Returns:
             Callable[[~.ClearSuggestionFeatureConfigRequest],

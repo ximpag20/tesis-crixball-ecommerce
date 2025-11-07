@@ -481,9 +481,10 @@ class VersionsRestTransport(_BaseVersionsRestTransport):
                 are specified, the client will attempt to ascertain the
                 credentials from the environment.
 
-            credentials_file (Optional[str]): A file with credentials that can
+            credentials_file (Optional[str]): Deprecated. A file with credentials that can
                 be loaded with :func:`google.auth.load_credentials_from_file`.
-                This argument is ignored if ``channel`` is provided.
+                This argument is ignored if ``channel`` is provided. This argument will be
+                removed in the next major version of this library.
             scopes (Optional(Sequence[str])): A list of scopes. This argument is
                 ignored if ``channel`` is provided.
             client_cert_source_for_mtls (Callable[[], Tuple[bytes, bytes]]): Client
@@ -587,10 +588,10 @@ class VersionsRestTransport(_BaseVersionsRestTransport):
                 can publish them to custom environments. You can create
                 a variety of custom environments for:
 
-                -  testing
-                -  development
-                -  production
-                -  etc.
+                - testing
+                - development
+                - production
+                - etc.
 
                 For more information, see the `versions and environments
                 guide <https://cloud.google.com/dialogflow/docs/agents-versions>`__.
@@ -869,10 +870,10 @@ class VersionsRestTransport(_BaseVersionsRestTransport):
                 can publish them to custom environments. You can create
                 a variety of custom environments for:
 
-                -  testing
-                -  development
-                -  production
-                -  etc.
+                - testing
+                - development
+                - production
+                - etc.
 
                 For more information, see the `versions and environments
                 guide <https://cloud.google.com/dialogflow/docs/agents-versions>`__.
@@ -1187,10 +1188,10 @@ class VersionsRestTransport(_BaseVersionsRestTransport):
                 can publish them to custom environments. You can create
                 a variety of custom environments for:
 
-                -  testing
-                -  development
-                -  production
-                -  etc.
+                - testing
+                - development
+                - production
+                - etc.
 
                 For more information, see the `versions and environments
                 guide <https://cloud.google.com/dialogflow/docs/agents-versions>`__.
