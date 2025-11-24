@@ -91,7 +91,7 @@ def create_permissions(
         for ct, (codename, name) in searched_perms
         if (ct.pk, codename) not in all_perms
     ]
-    Permission.objects.using(using).bulk_create(perms)
+    Permission.objects.using(using).bulk_create(perms, ignore_conflicts=True)
     if verbosity >= 2:
         for perm in perms:
             print(f"Adding permission '{perm}'")  # noqa: T201

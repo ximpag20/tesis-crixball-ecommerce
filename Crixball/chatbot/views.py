@@ -2,7 +2,9 @@ import os
 from dotenv import load_dotenv
 import re
 import json
-from google.cloud import dialogflow
+
+from google.cloud import dialogflow_v2 as dialogflow
+
 from google.cloud.dialogflow_v2 import SessionEntityTypesClient
 from django.http import JsonResponse
 from django.shortcuts import render

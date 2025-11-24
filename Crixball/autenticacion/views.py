@@ -46,7 +46,7 @@ def Autenticacion(request):
             request.session['etiqueta'] = "Reservaciones"
 
             # Asignar rol de usuario
-            if email == "arielvela8910@gmail.com":
+            if email == "paguayximena4@gmail.com":
                 request.session['rol_usuario'] = "administrador"
             else:
                 request.session['rol_usuario'] = "usuario"

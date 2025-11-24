@@ -288,7 +288,7 @@ class SaleorAPIService:
         
         # ID del warehouse por defecto de Saleor
         # Ajusta esto según tu configuración
-        warehouse_id = "V2FyZWhvdXNlOmVhNDI1ZmVhLTY2YzUtNGNmZi1hNDA0LTM4MzI3MDBiMzAzMw=="  # ID del warehouse por defecto
+        warehouse_id = "V2FyZWhvdXNlOjVjN2IyODRmLTk4YTQtNDg2YS1hZTYwLWUwMTlkZWRlZTk0Yg=="  # ID del warehouse por defecto
         
         variables = {
             "variantId": variante_id,

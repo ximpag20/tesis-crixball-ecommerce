@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                     DROP TABLE discount_sale_variants;
                     DROP TABLE discount_salechannellisting;
                     DROP TABLE discount_saletranslation;
-                    DROP TABLE discount_sale;
+                    DROP TABLE IF EXISTS discount_sale CASCADE;
                     """,
                     reverse_sql=migrations.RunSQL.noop,
                 ),
