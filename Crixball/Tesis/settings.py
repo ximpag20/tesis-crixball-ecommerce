@@ -228,3 +228,13 @@ if not IS_PRODUCTION:
             }
         }
     }
+
+SALEOR_API_URL = "http://localhost:8001/graphql/"
+SALEOR_USER_EMAIL = "paguayerika@gmail.com"
+SALEOR_USER_PASSWORD = "Erika.2020"
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}

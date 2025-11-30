@@ -2,7 +2,7 @@ import requests
 import json
 from decimal import Decimal
 from typing import Dict, List, Optional
-
+from .saleor_auth_service import SaleorAuthService  # 🔥 NUEVO
 
 class SaleorSyncService:
     """
@@ -14,20 +14,20 @@ class SaleorSyncService:
         # Configuración de Saleor
         self.api_url = "http://localhost:8001/graphql/"
         self.channel = "default-channel"
+        self.auth_service = SaleorAuthService()  # 🔥 NUEVO
         
         # Token de autenticación (opcional por ahora)
         # Si tienes un token de admin, agrégalo aquí:
         # self.token = "TU_TOKEN_AQUI"
-        self.token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IlJGWXhJU0ZhdVR6NjR2TEtZRFUyNWxEbnB4YXBGSUxqSHFUek1DcFpCMmciLCJ0eXAiOiJKV1QifQ.eyJpYXQiOjE3NjM5NTcxOTIsIm93bmVyIjoic2FsZW9yIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL2dyYXBocWwvIiwiZXhwIjoxNzYzOTU3NDkyLCJ0b2tlbiI6IlJ5M3ZpYTVQbGlicyIsImVtYWlsIjoicGFndWF5eGltZW5hNEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwidXNlcl9pZCI6IlZYTmxjam94IiwiaXNfc3RhZmYiOnRydWV9.I9SUNvtYTlMOZXFmiY32vAs_dCzTFr8CNuRq5EH_5n5neQGhmud1bHTPhp5l2OKin1dOC1GRWPVpLJN7yYZcR2vp-eE2qQxxAXgZeD5AcBUj2UqtZ2D1AayKQXTwePEQVp6uduWTAUqQ86j-7avjWj5tGEN2owMrbg73fjcyiWcwGR2muNp2MbU3D1itobEPFVOEFgTpDZec0NXFh9iaW0mURJogtsYfZrl4R3n9WtMosQr9Fm8LBd4zIPb27tTHj569c92ADcD33Y28nt-MTsSB8lxWy_kovP6Rbg9zYKWTSvRpyxp5YCLXrjGeK0bgHh9a39zvFTGL4xR_TWR-qw"
     def _get_headers(self):
         """Genera los headers para las peticiones"""
+        token = self.auth_service.obtener_token_valido()  # 🔥 NUEVO
         headers = {
             "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}" # 🔥 NUEVO
         }
         
-        # Si tienes token, lo agregamos
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+        
             
         return headers
     
