@@ -9,3 +9,7 @@ credenciales/
 !.elasticbeanstalk/*.global.yml
 venv/ 
 .venv
+
+**/venv/ 
+Crixball/venv/
+saleor-backend/venv/
