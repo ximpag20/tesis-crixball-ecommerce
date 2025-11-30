@@ -1,7 +1,7 @@
 credenciales/
 
 .env
-
+**/venv/
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

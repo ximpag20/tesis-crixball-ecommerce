@@ -1,6 +1,6 @@
 import requests
 from typing import List, Dict, Optional
-
+from .saleor_auth_service import SaleorAuthService  # 🔥 NUEVO
 
 class SaleorAPIService:
     """
@@ -10,6 +10,7 @@ class SaleorAPIService:
     def __init__(self):
         self.api_url = "http://localhost:8001/graphql/"
         self.channel = "default-channel"
+        self.auth_service = SaleorAuthService()  # 🔥 NUEVO
     
     def _ejecutar_query(self, query: str, variables: dict = None) -> Optional[dict]:
         """Ejecuta una query GraphQL en Saleor"""
@@ -17,11 +18,18 @@ class SaleorAPIService:
         if variables:
             payload["variables"] = variables
         
+        token = self.auth_service.obtener_token_valido()
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}"  # 🔥 NUEVO
+    }
+        
         try:
             response = requests.post(
                 self.api_url,
                 json=payload,
-                headers={"Content-Type": "application/json"},
+                headers=headers,  # 🔥 CAMBIO AQUÍ
                 timeout=10
             )
             
@@ -295,12 +303,19 @@ class SaleorAPIService:
             "quantity": nueva_cantidad,
             "warehouse": warehouse_id
         }
+
+        token = self.auth_service.obtener_token_valido()
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
         
         try:
             response = requests.post(
                 self.api_url,
                 json={"query": mutation, "variables": variables},
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 timeout=10
             )
             
