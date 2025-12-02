@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.db.models import Min, Sum
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
 import json
 
 #uso de decoradores
@@ -209,3 +210,9 @@ def actualizar_producto(request, id_pro):
             return JsonResponse({'error': 'Producto no encontrado'}, status=404)
     else:
         return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+def ver_carrito(request):
+    return render(request, "catalogo/ver_carrito.html")
+
+

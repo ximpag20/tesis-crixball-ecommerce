@@ -31,6 +31,7 @@ urlpatterns = [
     path('registro/', include('registro.urls')),
     path('cerrar_sesion/', auth_views.LogoutView.as_view(next_page='Inicio'), name='cerrar_sesion'),
     path('chatbot/', include('chatbot.urls')),
+    
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 #if settings.DEBUG:

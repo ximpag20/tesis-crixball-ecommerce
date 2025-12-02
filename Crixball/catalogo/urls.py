@@ -7,4 +7,6 @@ urlpatterns = [
     path('producto/<int:producto_id>/', views.DetallesProducto, name='detalles_producto'),
     path('favorito/<int:producto_id>/', views.toggle_favorito, name='toggle_favorito'),
     path('actualizar-producto/<int:id_pro>/', views.actualizar_producto, name='actualizar_producto'),
+    path("carrito/", views.ver_carrito, name="ver_carrito"),
+    
 ]

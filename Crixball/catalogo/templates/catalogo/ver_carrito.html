@@ -1,0 +1,50 @@
+{% extends 'header.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="text-center mb-4">🛒 Carrito de Compras</h2>
+
+    {% if productos %}
+    <table class="table table-bordered text-center">
+        <thead class="table-dark">
+            <tr>
+                <th>Producto</th>
+                <th>Talla</th>
+                <th>Precio</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.nombre_pro }}</td>
+                <td>{{ producto.talla }}</td>
+                <td>${{ producto.precio }}</td>
+                <td>
+                    <a href="/catalogo/carrito/eliminar/{{ producto.id }}/" class="btn btn-danger btn-sm">
+                        Eliminar
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-end mt-3">
+        <a href="/citas/" class="btn btn-primary">
+            Continuar con la reserva
+        </a>
+    </div>
+
+    {% else %}
+    <div class="alert alert-warning text-center">
+        Tu carrito está vacío.
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

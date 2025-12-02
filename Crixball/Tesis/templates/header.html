@@ -156,7 +156,21 @@
                         <div class="dropdown-menu dropdown-menu-right" style="min-width: 300px;">
                             <p class="dropdown-item text-center text-muted">Cargando...</p>
                         </div>
-                    </li>                    
+                    </li>   
+                    {% if request.session.rol_usuario == 'administrador' or request.session.rol_usuario == 'cliente' %}
+                    <li class="nav-item position-relative">
+                    <a href="{% url 'ver_carrito' %}" class="nav-link text-white position-relative">
+                      <i class="fas fa-shopping-cart"></i>
+                          <!-- Badge del carrito -->
+                          <span id="carrito-count" 
+                           class="badge badge-primary position-absolute" 
+                            style="top: 0; right: 0; font-size: 0.8rem; display: none;">
+                           0
+                        </span>
+                       </a>
+                        </li>
+                    {% endif %}
+                 
                     
                 {% else %}
                     <a href="#" class="nav-item nav-link text-white" data-toggle="modal" data-target="#loginModal">Iniciar Sesión</a>
