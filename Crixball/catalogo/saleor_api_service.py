@@ -23,7 +23,7 @@ class SaleorAPIService:
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}"  # 🔥 NUEVO
-    }
+        }
         
         try:
             response = requests.post(
@@ -498,34 +498,37 @@ class SaleorAPIService:
 
         return data.get("checkout")
 
-    def eliminar_linea_checkout(self, checkout_token: str, line_id: str) -> Optional[dict]:
-        """
-        Elimina una línea del checkout (carrito) en Saleor.
-        """
+    def eliminar_linea_checkout(self, checkout_token: str, line_id: str):
         query = """
-        mutation RemoveLineFromCheckout($token: UUID!, $lineId: ID!) {
-          checkoutLinesDelete(
+        mutation DeleteLines($token: UUID!, $linesIds: [ID!]!) {
+        checkoutLinesDelete(
             token: $token,
-            lineIds: [$lineId]
-          ) {
+            linesIds: $linesIds
+        ) {
             checkout {
-              id
-              token
+            id
+            token
+            totalPrice {
+                gross {
+                amount
+                currency
+                }
+            }
+            lines {
+                id
+                quantity
+            }
             }
             errors {
-              field
-              message
+            field
+            message
             }
-          }
+        }
         }
         """
         variables = {
             "token": checkout_token,
-            "lineId": line_id,
+            "linesIds": [line_id]  # ← NOMBRE CORRECTO
         }
 
-        data = self._ejecutar_query(query, variables)
-        if not data:
-            return None
-
-        return data.get("checkoutLinesDelete")
+        return self._ejecutar_query(query, variables)

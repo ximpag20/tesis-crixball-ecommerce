@@ -273,3 +273,34 @@ def carrito_eliminar(request, line_id):
 
 
 
+def carrito_eliminar(request, line_id):
+    print("🟠 Entró a carrito_eliminar con LINE_ID =", line_id)
+
+    checkout_token = request.session.get("checkout_token")
+    if not checkout_token:
+        print("❌ No hay checkout_token en sesión")
+        return redirect("ver_carrito")
+
+    saleor = SaleorAPIService()
+
+    # Obtener checkout completo
+    checkout = saleor.obtener_checkout(checkout_token)
+    print("🟢 Checkout obtenido:", checkout)
+
+    if not checkout:
+        print("❌ Saleor NO devolvió checkout")
+        return redirect("ver_carrito")
+
+    checkout_id = checkout.get("id")
+    print("🔵 Checkout ID real:", checkout_id)
+
+    resultado = saleor.eliminar_linea_checkout(checkout_id, line_id)
+
+    print("🔍 RESPUESTA DE SALEOR AL BORRAR:", resultado)
+
+    resultado = saleor.eliminar_linea_checkout(checkout_token, line_id)
+    print("🔍 RESPUESTA DE SALEOR AL BORRAR:", resultado)
+
+
+    return redirect("ver_carrito")
+
