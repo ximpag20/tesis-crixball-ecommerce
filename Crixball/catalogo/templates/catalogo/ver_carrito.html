@@ -1,42 +1,38 @@
 {% extends 'header.html' %}
 {% load static %}
+
 {% block content %}
 
 <div class="container mt-4">
 
-    <h2 class="text-center mb-4">🛒 Carrito de Compras</h2>
+    <h2 class="text-center mb-4">🛒 Tu Carrito de Compras</h2>
 
-    {% if productos %}
-    <table class="table table-bordered text-center">
-        <thead class="table-dark">
-            <tr>
-                <th>Producto</th>
-                <th>Talla</th>
-                <th>Precio</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
+    {% if carrito and carrito.lines %}
+    
+    {% for line in carrito.lines %}
+    <div class="card mb-3 shadow-sm p-3">
+        <div class="d-flex align-items-center">
+            <img src="{{ line.variant.product.thumbnail.url }}" 
+                 width="80" height="80" class="rounded">
 
-        <tbody>
-            {% for producto in productos %}
-            <tr>
-                <td>{{ producto.nombre_pro }}</td>
-                <td>{{ producto.talla }}</td>
-                <td>${{ producto.precio }}</td>
-                <td>
-                    <a href="/catalogo/carrito/eliminar/{{ producto.id }}/" class="btn btn-danger btn-sm">
-                        Eliminar
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            <div class="ms-3">
+                <h5>{{ line.variant.product.name }}</h5>
+                <p>Variante: {{ line.variant.name }}</p>
+                <p>Cantidad: {{ line.quantity }}</p>
+                <p>Subtotal: ${{ line.totalPrice.gross.amount }}</p>
+            </div>
 
-    <div class="text-end mt-3">
-        <a href="/citas/" class="btn btn-primary">
-            Continuar con la reserva
-        </a>
+            <div class="ms-auto">
+                <a href="{% url 'carrito_eliminar' line.id %}" class="btn btn-danger">
+                    Quitar
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="text-end mt-4">
+        <h3>Total: ${{ carrito.totalPrice.gross.amount }}</h3>
     </div>
 
     {% else %}

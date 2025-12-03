@@ -603,7 +603,11 @@
             </div>
             <button class="btn btn-primary mt-4" id="reserveButton" onclick="redirectToReserve({{ producto_seleccionado.id_pro }})">
                 Reservar Ahora
-            </button>                       
+            </button>
+            <button class="btn btn-success mt-2" id="addToCartButton">
+    Agregar al Carrito
+</button>
+                       
             
     </div>    
 
@@ -712,30 +716,66 @@
         modalTitle.textContent = productName;
         
         // Actualizar el contenido del modal con la tabla de tallas
-        modalBody.innerHTML = `
-            <table class="modal-table">
-                <thead>
-                    <tr>
-                        <th>Talla</th>
-                        <th>Cantidad</th>
-                        <th>Precio</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tallas.map(talla => `
-                        <tr>
-                            <td>${talla.talla}</td>
-                            <td>${talla.stock}</td>
-                            <td>$${parseFloat(talla.precio).toFixed(2)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
+modalBody.innerHTML = `
+    <table class="modal-table">
+        <thead>
+            <tr>
+                <th>Talla</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Seleccionar</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${tallas.map(talla => `
+                <tr>
+                    <td>${talla.talla}</td>
+                    <td>${talla.stock}</td>
+                    <td>$${parseFloat(talla.precio).toFixed(2)}</td>
+                    <td>
+                        <input type="radio"
+                               name="tallaSelect"
+                               value="${talla.variant_id}"
+                               data-precio="${talla.precio}">
+                    </td>
+                </tr>
+            `).join("")}
+        </tbody>
+    </table>
+`;
+
         
         // Actualizar el onclick del botón con el ID de Saleor
         reserveButton.setAttribute('onclick', `redirectToReserveSaleor('${productSaleorId}')`);
     }
+    function agregarProductoAlCarrito() {
+    const tallaSeleccionada = document.querySelector("input[name='tallaSelect']:checked");
+
+    if (!tallaSeleccionada) {
+        alert("Selecciona una talla");
+        return;
+    }
+
+    const variant_id = tallaSeleccionada.value;
+
+    fetch("/catalogo/carrito/agregar/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+            variant_id: variant_id,
+            quantity: 1
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert("Producto agregado al carrito ✔");
+        modal.style.display = "none";
+    })
+}   document.getElementById("addToCartButton").onclick = agregarProductoAlCarrito;
+
 
     /**
      * Redirige a reservas con producto de Saleor

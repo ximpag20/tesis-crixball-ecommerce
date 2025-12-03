@@ -157,7 +157,7 @@
                             <p class="dropdown-item text-center text-muted">Cargando...</p>
                         </div>
                     </li>   
-                    {% if request.session.rol_usuario == 'administrador' or request.session.rol_usuario == 'cliente' %}
+                    {% if request.session.correo_usuario %}
                     <li class="nav-item position-relative">
                     <a href="{% url 'ver_carrito' %}" class="nav-link text-white position-relative">
                       <i class="fas fa-shopping-cart"></i>

@@ -9,6 +9,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 import json
 
+from .saleor_api_service import SaleorAPIService
+import json
+
 #uso de decoradores
 @login_required
 def Catalogo(request):
@@ -212,7 +215,61 @@ def actualizar_producto(request, id_pro):
         return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
+@login_required
 def ver_carrito(request):
-    return render(request, "catalogo/ver_carrito.html")
+    checkout_token = request.session.get("checkout_token")
+    carrito = None
+
+    if checkout_token:
+        saleor = SaleorAPIService()
+        carrito = saleor.obtener_checkout(checkout_token)
+
+    return render(request, "catalogo/ver_carrito.html", {
+        "carrito": carrito
+    })
+
+
+@login_required
+def carrito_agregar(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    data = json.loads(request.body)
+
+    variant_id = data.get("variant_id")
+    quantity = int(data.get("quantity", 1))
+
+    if not variant_id:
+        return JsonResponse({"error": "variant_id requerido"}, status=400)
+
+    saleor = SaleorAPIService()
+
+    # 🔥 Si no hay checkout token, crear uno
+    checkout_token = request.session.get("checkout_token")
+
+    if not checkout_token:
+        nuevo_checkout = saleor.crear_checkout(request.user.email)
+        checkout_token = nuevo_checkout["checkout"]["token"]
+        request.session["checkout_token"] = checkout_token
+
+    # 🔥 Agregar línea
+    resultado = saleor.agregar_linea_checkout(checkout_token, variant_id, quantity)
+
+    return JsonResponse({
+        "status": "ok",
+        "checkout": resultado
+    })
+
+@login_required
+def carrito_eliminar(request, line_id):
+    checkout_token = request.session.get("checkout_token")
+    if not checkout_token:
+        return redirect("ver_carrito")
+
+    saleor = SaleorAPIService()
+    saleor.eliminar_linea_checkout(checkout_token, line_id)
+
+    return redirect("ver_carrito")
+
 
 

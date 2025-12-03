@@ -128,7 +128,8 @@ class SaleorAPIService:
                             tallas_disponibles.append({
                                 'talla': talla,
                                 'precio': float(precio) if precio else 0,
-                                'stock': variante.get('quantityAvailable', 0)
+                                'stock': variante.get('quantityAvailable', 0),
+                                'variant_id': variante.get('id')
                             })
                 
                 stock_total += variante.get('quantityAvailable', 0)
@@ -336,3 +337,195 @@ class SaleorAPIService:
         except Exception as e:
             print(f"❌ Error actualizando stock en Saleor: {e}")
             return False
+
+
+    # ============================================================
+    #  CHECKOUT / CARRITO DE SALEOR
+    # ============================================================
+
+    def crear_checkout(self, email: str) -> Optional[dict]:
+        """
+        Crea un checkout vacío en Saleor (equivale a crear carrito).
+
+        Devuelve:
+            {
+                "checkout": { "id": ..., "token": ... },
+                "errors": [...]
+            }
+        """
+        query = """
+        mutation CreateCheckout($email: String!) {
+          checkoutCreate(
+            input: {
+              email: $email,
+              lines: []
+            }
+          ) {
+            checkout {
+              id
+              token
+            }
+            errors {
+              field
+              message
+            }
+          }
+        }
+        """
+        variables = {"email": email}
+
+        data = self._ejecutar_query(query, variables)
+        if not data:
+            return None
+
+        return data.get("checkoutCreate")
+
+    def agregar_linea_checkout(self, checkout_token: str, variant_id: str, quantity: int = 1) -> Optional[dict]:
+        """
+        Agrega una línea (producto variante) al checkout de Saleor.
+
+        Args:
+            checkout_token: token del checkout (guardado en sesión)
+            variant_id: ID de la variante de Saleor (no el producto)
+            quantity: cantidad a agregar
+
+        Devuelve estructura con checkout y posibles errores.
+        """
+        query = """
+        mutation AddLineToCheckout($token: UUID!, $variantId: ID!, $quantity: Int!) {
+          checkoutLinesAdd(
+            token: $token,
+            lines: [
+              {
+                quantity: $quantity,
+                variantId: $variantId
+              }
+            ]
+          ) {
+            checkout {
+              id
+              token
+              totalPrice {
+                gross {
+                  amount
+                  currency
+                }
+              }
+              lines {
+                id
+                quantity
+                totalPrice {
+                  gross {
+                    amount
+                    currency
+                  }
+                }
+                variant {
+                  id
+                  name
+                  product {
+                    name
+                    thumbnail {
+                      url
+                    }
+                  }
+                }
+              }
+            }
+            errors {
+              field
+              message
+            }
+          }
+        }
+        """
+        variables = {
+            "token": checkout_token,
+            "variantId": variant_id,
+            "quantity": quantity,
+        }
+
+        data = self._ejecutar_query(query, variables)
+        if not data:
+            return None
+
+        return data.get("checkoutLinesAdd")
+
+    def obtener_checkout(self, checkout_token: str) -> Optional[dict]:
+        """
+        Obtiene la información completa del checkout (carrito) por su token.
+        """
+        query = """
+        query GetCheckout($token: UUID!) {
+          checkout(token: $token) {
+            id
+            token
+            email
+            totalPrice {
+              gross {
+                amount
+                currency
+              }
+            }
+            lines {
+              id
+              quantity
+              totalPrice {
+                gross {
+                  amount
+                  currency
+                }
+              }
+              variant {
+                id
+                name
+                product {
+                  name
+                  thumbnail {
+                    url
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+        variables = {"token": checkout_token}
+
+        data = self._ejecutar_query(query, variables)
+        if not data:
+            return None
+
+        return data.get("checkout")
+
+    def eliminar_linea_checkout(self, checkout_token: str, line_id: str) -> Optional[dict]:
+        """
+        Elimina una línea del checkout (carrito) en Saleor.
+        """
+        query = """
+        mutation RemoveLineFromCheckout($token: UUID!, $lineId: ID!) {
+          checkoutLinesDelete(
+            token: $token,
+            lineIds: [$lineId]
+          ) {
+            checkout {
+              id
+              token
+            }
+            errors {
+              field
+              message
+            }
+          }
+        }
+        """
+        variables = {
+            "token": checkout_token,
+            "lineId": line_id,
+        }
+
+        data = self._ejecutar_query(query, variables)
+        if not data:
+            return None
+
+        return data.get("checkoutLinesDelete")
