@@ -224,9 +224,35 @@ def ver_carrito(request):
         saleor = SaleorAPIService()
         carrito = saleor.obtener_checkout(checkout_token)
 
+        if carrito and "lines" in carrito:
+            for line in carrito["lines"]:
+                product = line["variant"]["product"]
+
+                # 1) Thumbnail de Saleor (si existe)
+                if product.get("thumbnail") and product["thumbnail"].get("url"):
+                    line["image"] = product["thumbnail"]["url"]
+
+                # 2) Primera imagen del media (si existe)
+                elif product.get("media") and len(product["media"]) > 0:
+                    line["image"] = product["media"][0]["url"]
+
+                # 3) Imagen desde Django
+                else:
+                    try:
+                        # Buscar por ID de producto en Saleor
+                        saleor_id = line["variant"]["product"]["id"]
+                        local = Producto.objects.filter(saleor_product_id=saleor_id).first()
+                        if local and local.imagen_pro:
+                            line["image"] = local.imagen_pro.url
+                        else:
+                            line["image"] = "/static/img/no_image.png"
+                    except:
+                        line["image"] = "/static/img/no_image.png"
+
     return render(request, "catalogo/ver_carrito.html", {
         "carrito": carrito
     })
+
 
 
 @login_required
@@ -244,7 +270,7 @@ def carrito_agregar(request):
 
     saleor = SaleorAPIService()
 
-    # 🔥 Si no hay checkout token, crear uno
+    # Obtener o crear checkout
     checkout_token = request.session.get("checkout_token")
 
     if not checkout_token:
@@ -252,13 +278,30 @@ def carrito_agregar(request):
         checkout_token = nuevo_checkout["checkout"]["token"]
         request.session["checkout_token"] = checkout_token
 
-    # 🔥 Agregar línea
+    # Agregar línea a Saleor
     resultado = saleor.agregar_linea_checkout(checkout_token, variant_id, quantity)
+
+    # 🔥🔥🔥 ADJUNTAR IMAGEN DESDE DJANGO AL OBJETO RETORNADO 🔥🔥🔥
+    imagen_url = "/static/img/no_image.png"
+
+    # Buscar el producto en Django por variant_id
+    try:
+        prod = Producto.objects.get(saleor_variant_id=variant_id)
+        if prod.imagen_pro:
+            imagen_url = prod.imagen_pro.url
+    except:
+        pass
+
+    # Si Saleor devolvió checkout y líneas, inyectar imagen
+    if resultado and resultado.get("checkout") and resultado["checkout"].get("lines"):
+        for line in resultado["checkout"]["lines"]:
+            line["image"] = imagen_url
 
     return JsonResponse({
         "status": "ok",
         "checkout": resultado
     })
+
 
 @login_required
 def carrito_eliminar(request, line_id):

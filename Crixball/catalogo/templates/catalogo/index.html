@@ -400,6 +400,13 @@
     width: 100%;
     height: 100%;
 }
+/* 🔥 Animación para desvanecer el modal */
+.fadeOut {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity .25s ease, transform .25s ease;
+}
+
     </style>
 </head>
 <body>
@@ -604,7 +611,7 @@
             <button class="btn btn-primary mt-4" id="reserveButton" onclick="redirectToReserve({{ producto_seleccionado.id_pro }})">
                 Reservar Ahora
             </button>
-            <button class="btn btn-success mt-2" id="addToCartButton">
+            <button  type="button" class="btn btn-success mt-2" id="addToCartButton">
     Agregar al Carrito
 </button>
                        
@@ -748,11 +755,13 @@ modalBody.innerHTML = `
         // Actualizar el onclick del botón con el ID de Saleor
         reserveButton.setAttribute('onclick', `redirectToReserveSaleor('${productSaleorId}')`);
     }
-    function agregarProductoAlCarrito() {
+function agregarProductoAlCarrito() {
+    const modal = document.getElementById("productModal");
     const tallaSeleccionada = document.querySelector("input[name='tallaSelect']:checked");
 
+    // ❌ Si no selecciona talla → mensaje flotante rojo
     if (!tallaSeleccionada) {
-        alert("Selecciona una talla");
+        showToast("⚠️ Por favor seleccione una talla", "error");
         return;
     }
 
@@ -771,10 +780,48 @@ modalBody.innerHTML = `
     })
     .then(r => r.json())
     .then(data => {
-        alert("Producto agregado al carrito ✔");
-        modal.style.display = "none";
+        console.log("RESPUESTA DEL SERVIDOR:", data);
+
+if (data && data.status === "ok") {
+
+    const modal = document.getElementById("productModal");
+
+    // 1️⃣ Mostrar mensaje verde
+    showToast("🛒 Producto agregado al carrito", "success");
+
+    // 2️⃣ Esperar 1500ms antes de cerrar (ajusta aquí la velocidad)
+    setTimeout(() => {
+        // inicia fadeOut (duración 300ms aprox)
+        modal.classList.add("fadeOut");
+
+        // 3️⃣ luego de la animación, cerrarlo
+        setTimeout(() => {
+            modal.style.display = "none";
+            modal.classList.remove("fadeOut");
+        }, 300); // coincide con duración de la animación
+
+    }, 1500); // ⏳ TIEMPO QUE EL MODAL PERMANECE ABIERTO
+
+} else {
+    showToast("❌ Error al agregar al carrito", "error");
+}
+
     })
-}   document.getElementById("addToCartButton").onclick = agregarProductoAlCarrito;
+    .catch(() => {
+        showToast("⚠️ Error de conexión con el servidor", "error");
+    });
+}
+
+// Delegado de click, pero frenando comportamiento por defecto
+document.addEventListener("click", function (e) {
+    if (e.target && e.target.id === "addToCartButton") {
+        e.preventDefault();          // 🔥 clave: no submit, no recarga
+        agregarProductoAlCarrito();
+    }
+});
+
+
+
 
 
     /**
@@ -1032,6 +1079,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     </script>
     
+
+
+
+<!-- TOAST FLOTANTE -->
+<div id="toast" style="
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #222;
+    color: #fff;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 15px;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 99999;
+    transition: all .3s;
+"></div>
+
+<script>
+function showToast(message, type = "info") {
+    const toast = document.getElementById("toast");
+    toast.innerHTML = message;
+
+    if (type === "success") {
+        toast.style.background = "#28a745";  // verde
+    } else if (type === "error") {
+        toast.style.background = "#dc3545";  // rojo
+    } else {
+        toast.style.background = "#222";
+    }
+
+    toast.style.display = "block";
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(20px)";
+        setTimeout(() => toast.style.display = "none", 300);
+    }, 2000);
+}
+</script>
+
+
 
 </body>
 </html>

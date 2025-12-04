@@ -480,8 +480,12 @@ class SaleorAPIService:
                 id
                 name
                 product {
+                  id
                   name
                   thumbnail {
+                    url
+                  }
+                  media{
                     url
                   }
                 }
