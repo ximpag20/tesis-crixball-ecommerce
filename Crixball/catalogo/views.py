@@ -347,3 +347,62 @@ def carrito_eliminar(request, line_id):
 
     return redirect("ver_carrito")
 
+@login_required
+def checkout_view(request):
+    checkout_token = request.session.get("checkout_token")
+    carrito = None
+
+    if checkout_token:
+        saleor = SaleorAPIService()
+        carrito = saleor.obtener_checkout(checkout_token)
+
+    if not carrito:
+        messages.error(request, "Tu carrito está vacío.")
+        return redirect("catalogo")
+
+    return render(request, "catalogo/checkout.html", {
+        "carrito": carrito
+    })
+
+@login_required
+def carrito_actualizar_cantidad(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    data = json.loads(request.body)
+    line_id = data.get("line_id")
+    quantity = int(data.get("quantity", 1))
+    stock_max = int(data.get("stock_max", 99))
+
+    # Validación de stock
+    if quantity > stock_max:
+        return JsonResponse({
+            "status": "error",
+            "message": "Has superado el stock disponible."
+        })
+
+    checkout_token = request.session.get("checkout_token")
+    if not checkout_token:
+        return JsonResponse({"error": "No hay checkout activo"}, status=400)
+
+    saleor = SaleorAPIService()
+    checkout = saleor.obtener_checkout(checkout_token)
+
+    checkout_id = checkout.get("id")
+    result = saleor.actualizar_cantidad_linea(checkout_id, line_id, quantity)
+
+    # result YA ES checkoutLinesUpdate → no busques otra clave
+    if not result:
+        return JsonResponse({
+            "status": "error",
+            "message": "Error actualizando cantidad."
+        })
+
+    checkout_data = result.get("checkout")  # ← ESTE ES EL CHECKOUT FINAL
+
+    return JsonResponse({
+        "status": "ok",
+        "checkout": checkout_data
+    })
+
+

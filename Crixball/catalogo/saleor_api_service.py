@@ -479,6 +479,15 @@ class SaleorAPIService:
               variant {
                 id
                 name
+                quantityAvailable
+                pricing {
+                    price {
+                        gross {
+                        amount
+                        currency
+                        }
+                    }
+                } 
                 product {
                   id
                   name
@@ -536,3 +545,36 @@ class SaleorAPIService:
         }
 
         return self._ejecutar_query(query, variables)
+
+    def actualizar_cantidad_linea(self, checkout_id, line_id, quantity):
+        query = """
+        mutation UpdateLine($checkoutId: ID!, $lines: [CheckoutLineUpdateInput!]!) {
+        checkoutLinesUpdate(checkoutId: $checkoutId, lines: $lines) {
+            checkout {
+            id
+            totalPrice { gross { amount } }
+            lines {
+                id
+                quantity
+                totalPrice { gross { amount } }
+            }
+            }
+            errors { field message }
+        }
+        }
+        """
+
+        variables = {
+            "checkoutId": checkout_id,
+            "lines": [
+                {"lineId": line_id, "quantity": quantity}
+            ]
+        }
+
+        # ❌ ERROR → self._execute
+        # ✔ FIX:
+        response = self._ejecutar_query(query, variables)
+
+        return response.get("checkoutLinesUpdate", None)
+
+

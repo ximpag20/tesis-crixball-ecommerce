@@ -789,6 +789,18 @@ if (data && data.status === "ok") {
     // 1️⃣ Mostrar mensaje verde
     showToast("🛒 Producto agregado al carrito", "success");
 
+    // 🔥 ACTUALIZAR EL CONTADOR DEL CARRITO
+let current = sessionStorage.getItem("carrito_count");
+current = current ? parseInt(current) + 1 : 1;
+
+sessionStorage.setItem("carrito_count", current);
+
+// Actualizar en el icono visualmente
+const badge = document.getElementById("carrito-count");
+badge.textContent = current;
+badge.style.display = "inline-block";
+
+
     // 2️⃣ Esperar 1500ms antes de cerrar (ajusta aquí la velocidad)
     setTimeout(() => {
         // inicia fadeOut (duración 300ms aprox)

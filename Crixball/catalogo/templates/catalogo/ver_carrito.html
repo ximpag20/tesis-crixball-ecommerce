@@ -203,16 +203,31 @@
                 <div class="producto-info">
                     <h4>{{ line.variant.product.name }}</h4>
                     <p>{{ line.variant.name }}</p>
-                    <p class="precio">$ {{ line.totalPrice.gross.amount }}</p>
+                    <p class="precio">$ {{ line.variant.pricing.price.gross.amount }}</p>
+
+
                 </div>
 
 <div class="controls-col">
 
-    <div class="cantidad-controls">
-        <div class="cantidad-btn">−</div>
-        <div>{{ line.quantity }}</div>
-        <div class="cantidad-btn">+</div>
-    </div>
+<div class="cantidad-control d-flex align-items-center">
+
+<button class="btn btn-light btn-sm btn-restar"
+        data-line="{{ line.id }}" 
+        data-stock="{{ line.variant.quantityAvailable|default:0 }}">−</button>
+
+
+    <span class="mx-2 cantidad-valor" id="qty-{{ line.id }}">
+        {{ line.quantity }}
+    </span>
+
+<button class="btn btn-light btn-sm btn-sumar"
+        data-line="{{ line.id }}" 
+        data-stock="{{ line.variant.quantityAvailable|default:0 }}">+</button>
+
+
+</div>
+
 
     <a href="{% url 'carrito_eliminar' line.id %}">
         <span class="delete-btn">🗑️</span>
@@ -236,20 +251,195 @@
 
         <h3>Resumen</h3>
 
-        <div class="resumen-row">
-            <span>Subtotal</span>
-            <span>$ {{ carrito.totalPrice.gross.amount }}</span>
-        </div>
+<div class="resumen-row">
+    <span>Subtotal</span>
+    <span id="subtotal-general">$ {{ carrito.totalPrice.gross.amount }}</span>
+</div>
 
-        <div class="resumen-row">
-            <span>Total</span>
-            <strong>$ {{ carrito.totalPrice.gross.amount }}</strong>
-        </div>
+<div class="resumen-row">
+    <span>Total</span>
+    <strong id="total-carrito">$ {{ carrito.totalPrice.gross.amount }}</strong>
+</div>
 
-        <button class="btn-checkout">Ir al checkout</button>
+
+        <a href="{% url 'checkout' %}">
+    <button class="btn-checkout">Ir al checkout</button>
+</a>
+
 
     </div>
 
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Cuando se entra al carrito, limpiar badge
+    sessionStorage.removeItem("carrito_count");
+
+    const badge = document.getElementById("carrito-count");
+    if (badge) {
+        badge.style.display = "none";
+    }
+});
+</script>
+
+<script>
+// Obtener CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Toast flotante
+function showToast(msg, type="error") {
+    const toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.style.background = type === "error" ? "#dc3545" : "#28a745";
+    toast.style.display = "block";
+    toast.style.opacity = "1";
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.style.display = "none", 300);
+    }, 2000);
+}
+
+document.addEventListener("click", function (e) {
+
+    if (!e.target.classList.contains("btn-sumar") &&
+        !e.target.classList.contains("btn-restar")) return;
+
+    let line = e.target.dataset.line;
+    let stock = parseInt(e.target.dataset.stock) || 0;
+
+    let qtySpan = document.getElementById("qty-" + line);
+    let currentQty = parseInt(qtySpan.innerText);
+    let newQty = currentQty;
+
+    // SUMAR
+    if (e.target.classList.contains("btn-sumar")) {
+        newQty++;
+        if (newQty > stock) {
+            showToast("⚠️ Has alcanzado el stock máximo disponible", "error");
+            return;
+        }
+    }
+    // RESTAR
+    else {
+        newQty--;
+        if (newQty < 1) return;
+    }
+
+    // ========================================
+    // ✅ ACTUALIZACIÓN INSTANTÁNEA (OPTIMISTA)
+    // ========================================
+    
+    // 1. Actualizar cantidad en pantalla
+    qtySpan.innerText = newQty;
+    
+    // 2. Calcular y actualizar totales INMEDIATAMENTE
+    calcularTotalesInstantaneos();
+
+    // ========================================
+    // Ahora sí, enviar a Django en segundo plano
+    // ========================================
+    fetch("/catalogo/carrito/actualizar-cantidad/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+            line_id: line,
+            quantity: newQty,
+            stock_max: stock
+        })
+    })
+    .then(res => res.json())
+    .then(resp => {
+
+        if (resp.status === "error") {
+            showToast(resp.message, "error");
+            
+            // Revertir cambios
+            qtySpan.innerText = currentQty;
+            calcularTotalesInstantaneos();
+            return;
+        }
+
+        // ✅ Si todo OK, no hacemos nada más (ya está actualizado)
+        console.log("✅ Cantidad sincronizada con Saleor");
+    })
+    .catch(err => {
+        console.error(err);
+        showToast("Error de conexión", "error");
+        
+        // Revertir cambios
+        qtySpan.innerText = currentQty;
+        calcularTotalesInstantaneos();
+    });
+});
+
+// ========================================
+// ✅ FUNCIÓN QUE CALCULA TOTALES LOCALMENTE
+// ========================================
+function calcularTotalesInstantaneos() {
+    let totalGeneral = 0;
+
+    // Recorrer todas las filas del carrito
+    document.querySelectorAll(".producto-item").forEach(item => {
+        
+        // Obtener precio unitario (el que aparece debajo del nombre)
+        let precioElement = item.querySelector(".precio");
+        if (!precioElement) return;
+        
+        let precioTexto = precioElement.innerText.replace("$", "").trim();
+        let precioUnitario = parseFloat(precioTexto);
+        
+        // Obtener cantidad actual
+        let qtySpan = item.querySelector(".cantidad-valor");
+        if (!qtySpan) return;
+        
+        let cantidad = parseInt(qtySpan.innerText);
+        
+        // Calcular subtotal de esta línea
+        let subtotal = precioUnitario * cantidad;
+        totalGeneral += subtotal;
+    });
+
+    // Actualizar en pantalla
+    const totalElement = document.getElementById("total-carrito");
+    if (totalElement) {
+        totalElement.innerText = "$ " + totalGeneral.toFixed(2);
+    }
+
+    const subtotalGeneral = document.getElementById("subtotal-general");
+    if (subtotalGeneral) {
+        subtotalGeneral.innerText = "$ " + totalGeneral.toFixed(2);
+    }
+}
+</script>
+
+<div id="toast" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #222;
+    padding: 12px 20px;
+    color: #fff;
+    border-radius: 8px;
+    display: none;
+    transition: opacity .3s;
+    z-index: 99999;
+"></div>
 {% endblock %}

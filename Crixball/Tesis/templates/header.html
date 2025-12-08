@@ -45,6 +45,26 @@
         font-size: 1.2rem;
         line-height: normal;
     }
+
+.carrito-badge {
+    background-color: #ff3b30;   /* rojo estilo Apple / Nike */
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    display: none;               /* oculto hasta que haya cantidad */
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.25);
+    z-index: 20;
+}
+
 </style>
 
 <!-- Navbar Start -->
@@ -162,11 +182,10 @@
                     <a href="{% url 'ver_carrito' %}" class="nav-link text-white position-relative">
                       <i class="fas fa-shopping-cart"></i>
                           <!-- Badge del carrito -->
-                          <span id="carrito-count" 
-                           class="badge badge-primary position-absolute" 
-                            style="top: 0; right: 0; font-size: 0.8rem; display: none;">
-                           0
-                        </span>
+                         <span id="carrito-count" class="carrito-badge">
+    0
+</span>
+
                        </a>
                         </li>
                     {% endif %}
@@ -596,7 +615,25 @@ document.addEventListener('DOMContentLoaded', function() {
     </script>
     
 
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-{% block extra_js %}{% endblock %}
+    const badge = document.getElementById("carrito-count");
+
+    // Obtener cantidad guardada en SESSION STORAGE
+    let count = sessionStorage.getItem("carrito_count");
+
+    if (count && parseInt(count) > 0) {
+        badge.textContent = count;
+        badge.style.display = "inline-flex";
+    }
+
+});
+</script>
+{% endblock %}
+
+
+
 </body>
 </html>
