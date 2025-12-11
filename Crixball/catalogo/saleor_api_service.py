@@ -7,10 +7,13 @@ class SaleorAPIService:
     Servicio para consumir productos desde Saleor y mostrarlos en el frontend
     """
     
-    def __init__(self):
+    def __init__(self, user_token=None, refresh_token=None, request=None):
         self.api_url = "http://localhost:8001/graphql/"
         self.channel = "default-channel"
         self.auth_service = SaleorAuthService()  # 🔥 NUEVO
+        self.user_token = user_token  # 🔥 NUEVO: Token del usuario autenticado
+        self.refresh_token = refresh_token
+        self.request = request  # 🔥 NUEVO: Objeto request de Django
     
     def _ejecutar_query(self, query: str, variables: dict = None) -> Optional[dict]:
         """Ejecuta una query GraphQL en Saleor"""
@@ -32,6 +35,45 @@ class SaleorAPIService:
                 headers=headers,  # 🔥 CAMBIO AQUÍ
                 timeout=10
             )
+
+            # 🔥 Si el token de usuario expiró (401), intentar refresh
+            if response.status_code == 401 and self.user_token and self.refresh_token:
+                print(f"⚠️ Token de usuario expirado, intentando refresh...")
+                
+                # Refrescar token
+                from .saleor_user_service import SaleorUserService
+                user_service = SaleorUserService()
+                resultado = user_service.refrescar_token_usuario(self.refresh_token)
+                
+                if resultado and resultado.get('token'):
+                    # Actualizar token en la instancia
+                    self.user_token = resultado['token']
+                    
+                    # 🔥 Actualizar token en la sesión si tenemos acceso al request
+                    if self.request:
+                        self.request.session['saleor_token'] = resultado['token']
+                        self.request.session.modified = True
+                        print(f"✅ Token refrescado y guardado en sesión")
+                    
+                    # Reintentar la query con el nuevo token
+                    headers["Authorization"] = f"Bearer {self.user_token}"
+                    response = requests.post(
+                        self.api_url,
+                        json=payload,
+                        headers=headers,
+                        timeout=10
+                    )
+                else:
+                    print(f"❌ No se pudo refrescar el token de usuario")
+                    # Fallback: usar token de staff
+                    token = self.auth_service.obtener_token_valido()
+                    headers["Authorization"] = f"Bearer {token}"
+                    response = requests.post(
+                        self.api_url,
+                        json=payload,
+                        headers=headers,
+                        timeout=10
+                    )
             
             if response.status_code == 200:
                 data = response.json()

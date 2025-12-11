@@ -284,6 +284,9 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
+// Variable global para tracking de requests pendientes
+let requestsPendientes = 0;
+
 // Obtener CSRF
 function getCookie(name) {
     let cookieValue = null;
@@ -340,19 +343,16 @@ document.addEventListener("click", function (e) {
         if (newQty < 1) return;
     }
 
-    // ========================================
-    // ✅ ACTUALIZACIÓN INSTANTÁNEA (OPTIMISTA)
-    // ========================================
-    
-    // 1. Actualizar cantidad en pantalla
+    // Actualizar cantidad en pantalla
     qtySpan.innerText = newQty;
     
-    // 2. Calcular y actualizar totales INMEDIATAMENTE
+    // Calcular totales instantáneos
     calcularTotalesInstantaneos();
 
-    // ========================================
-    // Ahora sí, enviar a Django en segundo plano
-    // ========================================
+    // 🔥 INCREMENTAR CONTADOR DE REQUESTS PENDIENTES
+    requestsPendientes++;
+
+    // Enviar a Django
     fetch("/catalogo/carrito/actualizar-cantidad/", {
         method: "POST",
         headers: {
@@ -367,57 +367,47 @@ document.addEventListener("click", function (e) {
     })
     .then(res => res.json())
     .then(resp => {
+        // 🔥 DECREMENTAR CONTADOR
+        requestsPendientes--;
 
         if (resp.status === "error") {
             showToast(resp.message, "error");
-            
-            // Revertir cambios
             qtySpan.innerText = currentQty;
             calcularTotalesInstantaneos();
             return;
         }
 
-        // ✅ Si todo OK, no hacemos nada más (ya está actualizado)
         console.log("✅ Cantidad sincronizada con Saleor");
     })
     .catch(err => {
+        // 🔥 DECREMENTAR CONTADOR EN CASO DE ERROR
+        requestsPendientes--;
+        
         console.error(err);
         showToast("Error de conexión", "error");
-        
-        // Revertir cambios
         qtySpan.innerText = currentQty;
         calcularTotalesInstantaneos();
     });
 });
 
-// ========================================
-// ✅ FUNCIÓN QUE CALCULA TOTALES LOCALMENTE
-// ========================================
 function calcularTotalesInstantaneos() {
     let totalGeneral = 0;
 
-    // Recorrer todas las filas del carrito
     document.querySelectorAll(".producto-item").forEach(item => {
-        
-        // Obtener precio unitario (el que aparece debajo del nombre)
         let precioElement = item.querySelector(".precio");
         if (!precioElement) return;
         
         let precioTexto = precioElement.innerText.replace("$", "").trim();
         let precioUnitario = parseFloat(precioTexto);
         
-        // Obtener cantidad actual
         let qtySpan = item.querySelector(".cantidad-valor");
         if (!qtySpan) return;
         
         let cantidad = parseInt(qtySpan.innerText);
-        
-        // Calcular subtotal de esta línea
         let subtotal = precioUnitario * cantidad;
         totalGeneral += subtotal;
     });
 
-    // Actualizar en pantalla
     const totalElement = document.getElementById("total-carrito");
     if (totalElement) {
         totalElement.innerText = "$ " + totalGeneral.toFixed(2);
@@ -428,6 +418,35 @@ function calcularTotalesInstantaneos() {
         subtotalGeneral.innerText = "$ " + totalGeneral.toFixed(2);
     }
 }
+
+// 🔥 NUEVO: Interceptar clic en botón de checkout
+document.addEventListener("DOMContentLoaded", function() {
+    const btnCheckout = document.querySelector(".btn-checkout");
+    
+    if (btnCheckout) {
+        btnCheckout.addEventListener("click", function(e) {
+            // Si hay requests pendientes, esperar
+            if (requestsPendientes > 0) {
+                e.preventDefault();
+                
+                showToast("⏳ Actualizando carrito...", "info");
+                
+                // Esperar a que terminen todos los requests
+                const checkInterval = setInterval(() => {
+                    if (requestsPendientes === 0) {
+                        clearInterval(checkInterval);
+                        showToast("✅ Carrito actualizado", "success");
+                        
+                        // Esperar 500ms y navegar
+                        setTimeout(() => {
+                            window.location.href = btnCheckout.closest('a').href;
+                        }, 500);
+                    }
+                }, 100);
+            }
+        });
+    }
+});
 </script>
 
 <div id="toast" style="

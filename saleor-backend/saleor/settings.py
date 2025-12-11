@@ -1116,3 +1116,8 @@ patch_db()
 # Patch `Local` to remove all references that could result in reference cycles,
 # allowing memory to be freed immediately, without the need of a deep garbage collection cycle.
 patch_local()
+
+# Al final del archivo settings.py (después de la línea 1118)
+
+# 🔥 DESACTIVAR CONFIRMACIÓN DE EMAIL PARA REGISTRO
+ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL = False

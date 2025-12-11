@@ -9,18 +9,35 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 import json
 
+from .saleor_user_service import SaleorUserService
 from .saleor_api_service import SaleorAPIService
 import json
 
 #uso de decoradores
 @login_required
 def Catalogo(request):
-    # Importar el servicio de Saleor
-    from .saleor_api_service import SaleorAPIService
     
-    # Crear instancia del servicio
-    saleor_service = SaleorAPIService()
+    # 🔥 SINCRONIZACIÓN AUTOMÁTICA AL ACCEDER AL CATÁLOGO
+    user_token = request.session.get('saleor_token')
+    refresh_token = request.session.get('saleor_refresh_token')
+    email = request.session.get('correo_usuario')
+    if email:
+        user_service = SaleorUserService()
+        saleor_user_id = user_service.sincronizar_usuario(email)
+        
+        if saleor_user_id:
+            # Guardar el ID de Saleor en sesión para uso posterior
+            request.session['saleor_user_id'] = saleor_user_id
+        else:
+            print(f"⚠️ No se pudo sincronizar usuario: {email}")
+
     
+    # 🔥 Crear instancia con tokens Y request para poder actualizar sesión
+    saleor_service = SaleorAPIService(
+        user_token=user_token,
+        refresh_token=refresh_token,
+        request=request  # 🔥 Importante para actualizar sesión
+    )
     # Obtener productos desde Saleor
     productos_saleor = saleor_service.obtener_productos(first=100)
     
@@ -268,13 +285,22 @@ def carrito_agregar(request):
     if not variant_id:
         return JsonResponse({"error": "variant_id requerido"}, status=400)
 
-    saleor = SaleorAPIService()
+    # 🔥 Crear servicio con tokens del usuario
+    user_token = request.session.get('saleor_token')
+    refresh_token = request.session.get('saleor_refresh_token')
+
+    saleor = SaleorAPIService(
+        user_token=user_token,
+        refresh_token=refresh_token,
+        request=request
+    )
 
     # Obtener o crear checkout
     checkout_token = request.session.get("checkout_token")
+    email = request.session.get('correo_usuario', request.user.email)
 
     if not checkout_token:
-        nuevo_checkout = saleor.crear_checkout(request.user.email)
+        nuevo_checkout = saleor.crear_checkout(email)
         checkout_token = nuevo_checkout["checkout"]["token"]
         request.session["checkout_token"] = checkout_token
 
@@ -347,6 +373,8 @@ def carrito_eliminar(request, line_id):
 
     return redirect("ver_carrito")
 
+# catalogo/views.py
+
 @login_required
 def checkout_view(request):
     checkout_token = request.session.get("checkout_token")
@@ -359,9 +387,100 @@ def checkout_view(request):
     if not carrito:
         messages.error(request, "Tu carrito está vacío.")
         return redirect("catalogo")
+    
+        # 🔥 AGREGAR IMÁGENES A LAS LÍNEAS DEL CARRITO
+    if carrito and "lines" in carrito:
+        for line in carrito["lines"]:
+            product = line["variant"]["product"]
 
+            # 1) Thumbnail de Saleor (si existe)
+            if product.get("thumbnail") and product["thumbnail"].get("url"):
+                line["image"] = product["thumbnail"]["url"]
+
+            # 2) Primera imagen del media (si existe)
+            elif product.get("media") and len(product["media"]) > 0:
+                line["image"] = product["media"][0]["url"]
+
+            # 3) 🔥 Imagen desde Django/Cloudinary (RECOMENDADO)
+            else:
+                try:
+                    # Buscar por ID de producto en Saleor
+                    saleor_id = line["variant"]["product"]["id"]
+                    local = Producto.objects.filter(saleor_product_id=saleor_id).first()
+                    if local and local.imagen_pro:
+                        line["image"] = local.imagen_pro.url
+                    else:
+                        line["image"] = "/static/img/no_image.png"
+                except:
+                    line["image"] = "/static/img/no_image.png"
+
+    # 🔥 OBTENER DATOS DEL USUARIO
+    email_usuario = request.session.get('correo_usuario')
+    user_token = request.session.get('saleor_token')
+    refresh_token = request.session.get('saleor_refresh_token')
+    
+    datos_usuario = {
+        'email': '',
+        'first_name': '',
+        'last_name': '',
+        'doc_number': '',
+        'phone': ''
+    }
+    
+    # 🔥 PASO 1: Intentar obtener datos de Saleor
+    if user_token:
+        from .saleor_user_service import SaleorUserService
+        user_service = SaleorUserService()
+        usuario_saleor = user_service.obtener_usuario_actual(user_token)
+        
+        # 🔥 Si el token expiró, intentar refresh
+        if not usuario_saleor and refresh_token:
+            print(f"🔄 Token expirado, intentando refresh...")
+            resultado_refresh = user_service.refrescar_token_usuario(refresh_token)
+            
+            if resultado_refresh and resultado_refresh.get('token'):
+                # Actualizar token en sesión
+                nuevo_token = resultado_refresh['token']
+                request.session['saleor_token'] = nuevo_token
+                request.session.modified = True
+                print(f"✅ Token refrescado exitosamente")
+                
+                # Reintentar obtener datos con el nuevo token
+                usuario_saleor = user_service.obtener_usuario_actual(nuevo_token)
+            else:
+                print(f"❌ No se pudo refrescar el token")
+        
+        if usuario_saleor:
+            datos_usuario['email'] = usuario_saleor.get('email', '')
+            datos_usuario['first_name'] = usuario_saleor.get('firstName', '')
+            datos_usuario['last_name'] = usuario_saleor.get('lastName', '')
+            print(f"✅ Datos de Saleor obtenidos: {datos_usuario['email']}")
+    
+    # 🔥 PASO 2: Obtener datos de Django (doc_number, phone)
+    # Y TAMBIÉN usar Django como fallback para email, nombre, apellido
+    if email_usuario:
+        try:
+            from registro.models import Usuario
+            usuario_django = Usuario.objects.get(email=email_usuario)
+            
+            # Datos siempre de Django
+            datos_usuario['doc_number'] = usuario_django.ci
+            datos_usuario['phone'] = usuario_django.tel
+            
+            # 🔥 FALLBACK: Si no hay datos de Saleor, usar Django
+            if not datos_usuario['email']:
+                datos_usuario['email'] = usuario_django.email
+                datos_usuario['first_name'] = usuario_django.nombre
+                datos_usuario['last_name'] = usuario_django.apellido
+                print(f"✅ Usando datos de Django como fallback: {usuario_django.email}")
+            
+            print(f"✅ Datos de Django obtenidos: CI={usuario_django.ci}, Tel={usuario_django.tel}")
+        except Usuario.DoesNotExist:
+            print(f"❌ Usuario no encontrado en Django: {email_usuario}")
+    
     return render(request, "catalogo/checkout.html", {
-        "carrito": carrito
+        "carrito": carrito,
+        "datos_usuario": datos_usuario
     })
 
 @login_required
