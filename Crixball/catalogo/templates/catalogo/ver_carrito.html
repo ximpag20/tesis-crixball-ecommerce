@@ -307,7 +307,7 @@ function getCookie(name) {
 function showToast(msg, type="error") {
     const toast = document.getElementById("toast");
     toast.innerText = msg;
-    toast.style.background = type === "error" ? "#dc3545" : "#28a745";
+    toast.style.background = type === "error" ? "#dc3545" : (type === "success" ? "#28a745" : "#007bff");
     toast.style.display = "block";
     toast.style.opacity = "1";
 
@@ -349,7 +349,7 @@ document.addEventListener("click", function (e) {
     // Calcular totales instantáneos
     calcularTotalesInstantaneos();
 
-    // 🔥 INCREMENTAR CONTADOR DE REQUESTS PENDIENTES
+    // Incrementar contador de requests pendientes
     requestsPendientes++;
 
     // Enviar a Django
@@ -367,7 +367,6 @@ document.addEventListener("click", function (e) {
     })
     .then(res => res.json())
     .then(resp => {
-        // 🔥 DECREMENTAR CONTADOR
         requestsPendientes--;
 
         if (resp.status === "error") {
@@ -380,7 +379,6 @@ document.addEventListener("click", function (e) {
         console.log("✅ Cantidad sincronizada con Saleor");
     })
     .catch(err => {
-        // 🔥 DECREMENTAR CONTADOR EN CASO DE ERROR
         requestsPendientes--;
         
         console.error(err);
@@ -419,16 +417,23 @@ function calcularTotalesInstantaneos() {
     }
 }
 
-// 🔥 NUEVO: Interceptar clic en botón de checkout
+// 🔥 INTERCEPTAR CLIC EN BOTÓN DE CHECKOUT
 document.addEventListener("DOMContentLoaded", function() {
     const btnCheckout = document.querySelector(".btn-checkout");
+    const linkCheckout = btnCheckout ? btnCheckout.closest('a') : null;
     
-    if (btnCheckout) {
-        btnCheckout.addEventListener("click", function(e) {
+    if (btnCheckout && linkCheckout) {
+        linkCheckout.addEventListener("click", function(e) {
+            e.preventDefault(); // Siempre prevenir navegación por defecto
+            
+            // 🔥 DESHABILITAR BOTÓN INMEDIATAMENTE
+            btnCheckout.disabled = true;
+            btnCheckout.style.opacity = "0.6";
+            btnCheckout.style.cursor = "not-allowed";
+            btnCheckout.innerText = "Procesando...";
+            
             // Si hay requests pendientes, esperar
             if (requestsPendientes > 0) {
-                e.preventDefault();
-                
                 showToast("⏳ Actualizando carrito...", "info");
                 
                 // Esperar a que terminen todos los requests
@@ -437,12 +442,22 @@ document.addEventListener("DOMContentLoaded", function() {
                         clearInterval(checkInterval);
                         showToast("✅ Carrito actualizado", "success");
                         
-                        // Esperar 500ms y navegar
+                        // 🔥 Cambiar texto del botón
+                        btnCheckout.innerText = "Redirigiendo...";
+                        
+                        // Esperar 300ms y navegar
                         setTimeout(() => {
-                            window.location.href = btnCheckout.closest('a').href;
-                        }, 500);
+                            window.location.href = linkCheckout.href;
+                        }, 300);
                     }
                 }, 100);
+            } else {
+                // 🔥 Si no hay requests pendientes, navegar inmediatamente
+                btnCheckout.innerText = "Redirigiendo...";
+                
+                setTimeout(() => {
+                    window.location.href = linkCheckout.href;
+                }, 300);
             }
         });
     }

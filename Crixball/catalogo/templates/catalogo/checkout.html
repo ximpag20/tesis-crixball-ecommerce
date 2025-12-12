@@ -250,7 +250,41 @@ select.input-field {
     background-position: right 12px center;
     padding-right: 35px !important;
 }
+#toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #dc3545;
+    color: #fff;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 99999;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 350px;
+}
 
+#toast.show {
+    display: block;
+    opacity: 1;
+}
+
+#toast.success {
+    background: #28a745;
+}
+
+#toast.info {
+    background: #007bff;
+}
+
+#toast.warning {
+    background: #ffc107;
+    color: #000;
+}
 </style>
 
 <div class="checkout-container">
@@ -334,7 +368,7 @@ select.input-field {
     <div class="row-2">
         <div class="col">
             <div class="checkbox-block">
-                <label><input type="checkbox" id="newsletter"> Quiero recibir el newsletter con promociones.</label>
+                <label><input type="checkbox" id="newsletter" required> Quiero recibir el newsletter con promociones.</label>
             </div>
 
             <div class="checkbox-block">
@@ -503,17 +537,50 @@ function goToStep(step){
 }
 </script>
 <script>
+// 🔥 FUNCIÓN PARA MOSTRAR TOAST
+function showToast(message, type = 'error') {
+    const toast = document.getElementById('toast');
+    
+    // Limpiar clases anteriores
+    toast.className = '';
+    
+    // Agregar clase según el tipo
+    if (type === 'success') {
+        toast.classList.add('success');
+    } else if (type === 'info') {
+        toast.classList.add('info');
+    } else if (type === 'warning') {
+        toast.classList.add('warning');
+    }
+    
+    // Establecer mensaje
+    toast.innerText = message;
+    
+    // Mostrar toast
+    toast.classList.add('show');
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
 // 🔥 VALIDAR PASO 1 ANTES DE CONTINUAR
 function validateStep1() {
     const acceptTerms = document.getElementById('accept_terms');
     
     if (!acceptTerms.checked) {
-        alert('Debes aceptar el tratamiento de datos personales para continuar.');
+        showToast('⚠️ Debes aceptar el tratamiento de datos personales para continuar.', 'warning');
         return;
     }
     
     console.log('✅ Paso 1 validado, continuando al paso 2...');
-    goToStep(2);
+    showToast('✅ Información guardada correctamente', 'success');
+    
+    // Esperar a que se vea el toast de éxito antes de cambiar de paso
+    setTimeout(() => {
+        goToStep(2);
+    }, 500);
 }
 
 function goToStep(step){
@@ -528,4 +595,5 @@ function goToStep(step){
     document.getElementById("stepNav" + step).classList.add("active");
 }
 </script>
+<div id="toast"></div>
 {% endblock %}
