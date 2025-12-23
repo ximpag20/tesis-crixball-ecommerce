@@ -13,6 +13,7 @@ urlpatterns = [
     path("carrito/", views.ver_carrito, name="ver_carrito"),
     path("carrito/checkout/", views.checkout_view, name="checkout"),
     path("carrito/actualizar-cantidad/", views.carrito_actualizar_cantidad, name="carrito_actualizar_cantidad"),
+    path('carrito/procesar-pago/', views.procesar_pago_checkout, name='procesar_pago'),  # 🔥 NUEVO
 
 
 

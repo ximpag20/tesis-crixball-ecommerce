@@ -285,6 +285,175 @@ select.input-field {
     background: #ffc107;
     color: #000;
 }
+/* ==================================================================
+   🔥 ESTILOS PARA PASO 3 - PAYMENT
+   ================================================================== */
+
+/* Contenedor de opción de pago */
+.payment-option {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    background: #fff;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.payment-option:has(input[type="radio"]:checked) {
+    border-color: #1f2937;
+    box-shadow: 0 0 0 1px #1f2937;
+}
+
+/* Header de método de pago */
+.payment-method-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    background: #fafafa;
+    transition: background 0.2s;
+}
+
+.payment-method-header:hover {
+    background: #f5f5f5;
+}
+
+.payment-option:has(input[type="radio"]:checked) .payment-method-header {
+    background: #f9fafb;
+}
+
+.payment-method-header input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin: 0;
+    accent-color: #000;
+}
+
+.payment-method-title {
+    margin-left: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.payment-logos {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.payment-logos img {
+    height: 20px;
+    object-fit: contain;
+}
+
+/* Formulario de pago */
+.payment-form-content {
+    padding: 20px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Input groups */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-label-small {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.input-field-payment {
+    width: 100%;
+    height: 44px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.input-field-payment:focus {
+    outline: none;
+    border-color: #1f2937;
+    box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.1);
+}
+
+/* Input con icono */
+.input-with-icon {
+    position: relative;
+}
+
+.input-icon-lock {
+    position: absolute;
+    right: 14px;
+    top: 12px;
+    font-size: 16px;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.input-icon-help {
+    position: absolute;
+    right: 14px;
+    top: 12px;
+    font-size: 14px;
+    color: #6b7280;
+    cursor: help;
+}
+
+/* Stripe Elements */
+.stripe-element {
+    height: 44px;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    transition: all 0.2s;
+}
+
+.stripe-element.StripeElement--focus {
+    border-color: #1f2937;
+    box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.1);
+}
+
+.stripe-element.StripeElement--invalid {
+    border-color: #ef4444;
+}
+
+.stripe-element.StripeElement--complete {
+    border-color: #10b981;
+}
+
+/* Loading Spinner */
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #000;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Deshabilitar botón durante procesamiento */
+.btn-next:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 </style>
 
 <div class="checkout-container">
@@ -294,9 +463,9 @@ select.input-field {
 
         <!-- NAV DE PASOS -->
         <div class="steps-nav">
-            <span class="step-item active" id="stepNav1">Information</span>
-            <span class="step-item" id="stepNav2">Shipping</span>
-            <span class="step-item" id="stepNav3">Payment</span>
+            <span class="step-item active" id="stepNav1">Información</span>
+            <span class="step-item" id="stepNav2">Envío</span>
+            <span class="step-item" id="stepNav3">Pago</span>
         </div>
 
 <!-- PASO 1: DATOS PERSONALES -->
@@ -380,21 +549,23 @@ select.input-field {
         </div>
     </div>
 
-    <!-- 🔙 VOLVER AL CARRITO -->
-    <div style="margin-top: 25px;">
+<!-- 🔥 BOTONES ALINEADOS (como en PASO 2) -->
+<div class="row-2" style="margin-top: 30px;">
+    <div class="col" style="display:flex; justify-content:space-between; align-items:center; flex-direction:row;">
+        <!-- 🔙 Volver al carrito -->
         <a href="/catalogo/carrito/" 
-           style="display:inline-flex; align-items:center; font-size:14px; 
-                  color:#444; text-decoration:none; cursor:pointer;">
+           style="display:inline-flex; align-items:center; color:#555; font-size:14px; text-decoration:none; cursor:pointer;">
             ← Volver al carrito
         </a>
-    </div>
 
-    <!-- BOTÓN FINAL -->
-    <div class="button-right">
-        <button class="btn-next btn-black" onclick="validateStep1()">
+        <!-- Continuar -->
+        <button class="btn-next btn-black" 
+                style="border-radius:12px; padding:13px 30px;"
+                onclick="validateStep1()">
             Guardar y continuar
         </button>
     </div>
+</div>
 </div>
 
 <!-- PASO 2: ENVÍO -->
@@ -404,88 +575,270 @@ select.input-field {
     <div class="row-2">
         <div class="col">
             <h2 class="step-title">Dirección de Envío</h2>
-            <p class="step-subtitle">
-                Ingresa la información necesaria para coordinar la entrega de tu pedido.
+            <p class="step-subtitle" style="text-align: justify;">
+                Ingresa la dirección donde deseas recibir tu pedido. Los datos de contacto 
+                del paso anterior se usarán para coordinar la entrega.
             </p>
         </div>
     </div>
 
-    <!-- País -->
+    <!-- 🔥 PROVINCIA Y CIUDAD (DINÁMICO) -->
     <div class="row-2">
         <div class="col">
-            <label class="input-label">País / Región</label>
-            <select class="input-field">
-                <option value="Ecuador">Ecuador</option>
-                <option value="Colombia">Colombia</option>
-                <option value="Perú">Perú</option>
+            <label class="input-label">Provincia *</label>
+            <select class="input-field" id="shipping_province" required onchange="actualizarCiudades()">
+                <option value="">Selecciona una provincia</option>
+                <option value="Tungurahua">Tungurahua</option>
+                <option value="Pichincha">Pichincha</option>
+                <option value="Chimborazo">Chimborazo</option>
             </select>
         </div>
+<div class="col">
+    <label class="input-label">Ciudad *</label>
+    <select class="input-field" id="shipping_city" required disabled onchange="calcularEnvio()">
+        <option value="">Primero selecciona una provincia</option>
+    </select>
+</div>
     </div>
 
-    <!-- Ciudad + Provincia -->
+    <!-- 🔥 DIRECCIÓN PRINCIPAL -->
     <div class="row-2">
         <div class="col">
-            <label class="input-label">Ciudad</label>
-            <input class="input-field" placeholder="Ambato">
-        </div>
-        <div class="col">
-            <label class="input-label">Provincia</label>
-            <input class="input-field" placeholder="Tungurahua">
+            <label class="input-label">Dirección principal *</label>
+            <input class="input-field" id="shipping_address_1" 
+                   placeholder="Calle principal y numeración" 
+                   required>
+            <small style="font-size: 12px; color: #666;">
+                Ejemplo: Av. Bolívar 12-34 y Rocafuerte
+            </small>
         </div>
     </div>
 
-    <!-- Dirección 1 -->
+    <!-- 🔥 REFERENCIA (opcional) -->
     <div class="row-2">
         <div class="col">
-            <label class="input-label">Dirección</label>
-            <input class="input-field" placeholder="Av. Bolívar y Rocafuerte">
+            <label class="input-label">Referencia de ubicación (opcional)</label>
+            <input class="input-field" id="shipping_address_2" 
+                   placeholder="Ej: Frente al parque, casa de color azul">
+            <small style="font-size: 12px; color: #666;">
+                Ayuda al repartidor a encontrar tu ubicación
+            </small>
         </div>
     </div>
 
-    <!-- Dirección opcional -->
+    <!-- 🔥 CÓDIGO POSTAL -->
     <div class="row-2">
         <div class="col">
-            <label class="input-label">Referencia (opcional)</label>
-            <input class="input-field" placeholder="Cerca del parque / color de la casa">
+            <label class="input-label">Código Postal *</label>
+            <input class="input-field" id="shipping_postal_code" 
+                   placeholder="010150" 
+                   maxlength="6"
+                   required>
+            <small style="font-size: 12px; color: #666;">
+                6 dígitos del código postal de tu ciudad
+            </small>
         </div>
     </div>
 
-    <!-- Código Postal -->
+    <!-- 🔥 RESUMEN DE DATOS DE CONTACTO (solo visual) -->
+    <div class="row-2" style="margin-top: 20px;">
+        <div class="col">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                <strong style="font-size: 14px; color: #333;">Se enviará a:</strong>
+                <p style="margin: 8px 0 4px 0; font-size: 13px; color: #555;">
+                    <strong id="preview_name">-</strong>
+                </p>
+                <p style="margin: 4px 0; font-size: 13px; color: #555;">
+                    <span id="preview_email">-</span>
+                </p>
+                <p style="margin: 4px 0; font-size: 13px; color: #555;">
+                    <span id="preview_phone">-</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 CHECKBOX: GUARDAR DIRECCIÓN -->
     <div class="row-2">
         <div class="col">
-            <label class="input-label">Código Postal</label>
-            <input class="input-field" placeholder="180101">
+            <div class="checkbox-block">
+                <label>
+                    <input type="checkbox" id="save_address" checked> 
+                    Guardar esta dirección para futuros pedidos
+                </label>
+            </div>
         </div>
     </div>
 
-<!-- Botones -->
-<div class="row-2">
-    <div class="col" style="display:flex; justify-content:space-between; align-items:center; flex-direction:row;">
-        <!-- 🔙 Regresar al paso anterior -->
-        <a onclick="goToStep(1)" 
-           style="display:inline-flex; align-items:center; color:#555; font-size:14px; text-decoration:none; cursor:pointer;">
-            ← Regresar 
-        </a>
+    <!-- Botones -->
+    <div class="row-2" style="margin-top: 30px;">
+        <div class="col" style="display:flex; justify-content:space-between; align-items:center; flex-direction:row;">
+            <!-- 🔙 Regresar al paso anterior -->
+            <a onclick="goToStep(1)" 
+               style="display:inline-flex; align-items:center; color:#555; font-size:14px; text-decoration:none; cursor:pointer;">
+                ← Regresar 
+            </a>
 
-        <!-- Continuar -->
-        <button class="btn-next btn-black" 
-                style="border-radius:12px; padding:13px 30px;"
-                onclick="goToStep(3)">
-            Continuar con Pago
-        </button>
+            <!-- Continuar -->
+            <button class="btn-next btn-black" 
+                    style="border-radius:12px; padding:13px 30px;"
+                    onclick="validateStep2()">
+                Continuar con Pago
+            </button>
+        </div>
     </div>
+
+</div>
+<!-- PASO 3: PAGO -->
+<div class="checkout-box" id="step3" style="display:none;">
+    
+    <div class="row-2">
+        <div class="col">
+            <h2 class="step-title">Payment</h2>
+            <p class="step-subtitle" style="color: #888; font-size: 13px; margin-bottom: 20px;">
+                All transactions are secure and encrypted.
+            </p>
+        </div>
+    </div>
+
+    <!-- 🔥 OPCIÓN 1: TARJETA DE CRÉDITO/DÉBITO (STRIPE) -->
+    <div class="payment-option" id="payment-card-option">
+        <label class="payment-method-header" onclick="selectPaymentMethod('card')">
+            <div style="display: flex; align-items: center; flex: 1;">
+                <input type="radio" name="payment_method" value="card" id="payment-card-radio" checked>
+                <span class="payment-method-title">Credit card</span>
+            </div>
+            <div class="payment-logos">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" 
+                     alt="Visa" style="height: 20px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
+                     alt="Mastercard" style="height: 20px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg" 
+                     alt="Amex" style="height: 20px;">
+                <span style="font-size: 12px; color: #888; margin-left: 5px;">+5</span>
+            </div>
+        </label>
+
+        <!-- Formulario de tarjeta -->
+        <div class="payment-form-content" id="card-form">
+            
+            <!-- 🔥 MODO DUMMY (Visible por ahora) -->
+            <div id="dummy-payment-info" style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                <strong style="color: #856404;">🧪 Test Mode (Dummy Gateway)</strong>
+                <p style="font-size: 13px; color: #856404; margin: 5px 0 0 0;">
+                    This is a test payment gateway. All orders will be automatically approved. 
+                    No real charges will be made.
+                </p>
+            </div>
+
+            <!-- 🔥 FORMULARIO STRIPE (Oculto por ahora, se mostrará cuando actives Stripe) -->
+            <div id="stripe-payment-form" style="display: none;">
+                <!-- Card Number -->
+                <div class="input-group">
+                    <label class="input-label-small">Card number</label>
+                    <div class="input-with-icon">
+                        <div id="card-number-element" class="stripe-element"></div>
+                        <span class="input-icon-lock">🔒</span>
+                    </div>
+                </div>
+
+                <!-- Expiry + CVV -->
+                <div class="row-2" style="gap: 10px; margin-bottom: 15px;">
+                    <div class="col">
+                        <label class="input-label-small">Expiration date (MM / YY)</label>
+                        <div id="card-expiry-element" class="stripe-element"></div>
+                    </div>
+                    <div class="col">
+                        <label class="input-label-small">Security code</label>
+                        <div class="input-with-icon">
+                            <div id="card-cvc-element" class="stripe-element"></div>
+                            <span class="input-icon-help" title="3 digits on back of card">ⓘ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Name on Card -->
+                <div class="input-group">
+                    <label class="input-label-small">Name on card</label>
+                    <input type="text" id="cardholder-name" class="input-field-payment" 
+                           placeholder="Name on card">
+                </div>
+
+                <!-- Error de Stripe -->
+                <div id="card-errors" style="color: #dc3545; font-size: 13px; margin-top: 10px;"></div>
+            </div>
+
+            <!-- Checkbox: usar dirección de envío -->
+            <div class="checkbox-block" style="margin-top: 15px;">
+                <label>
+                    <input type="checkbox" id="use_shipping_address" checked>
+                    Use shipping address as billing address
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 OPCIÓN 2: PAYPAL (Preparado para futuro) -->
+    <div class="payment-option" id="payment-paypal-option" style="opacity: 0.5; pointer-events: none;">
+        <label class="payment-method-header">
+            <div style="display: flex; align-items: center; flex: 1;">
+                <input type="radio" name="payment_method" value="paypal" id="payment-paypal-radio" disabled>
+                <span class="payment-method-title">PayPal</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 11px; color: #999; background: #f0f0f0; padding: 3px 8px; border-radius: 4px;">Coming soon</span>
+                <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_74x46.jpg" 
+                     alt="PayPal" style="height: 24px;">
+            </div>
+        </label>
+
+        <!-- Contenedor de PayPal Button (oculto) -->
+        <div class="payment-form-content" id="paypal-form" style="display:none;">
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                After clicking "Complete order", you will be redirected to PayPal to complete your purchase securely.
+            </p>
+            <div id="paypal-button-container"></div>
+        </div>
+    </div>
+
+    <!-- 🔥 LOADING SPINNER (cuando se procesa el pago) -->
+    <div id="payment-loading" style="display: none; text-align: center; padding: 20px;">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: #666;">Processing payment...</p>
+    </div>
+
+    <!-- 🔥 BOTONES DE NAVEGACIÓN -->
+    <div class="row-2" style="margin-top: 30px;">
+        <div class="col" style="display:flex; justify-content:space-between; align-items:center; flex-direction:row;">
+            <!-- Regresar -->
+            <a onclick="goToStep(2)" 
+               style="display:inline-flex; align-items:center; color:#555; font-size:14px; text-decoration:none; cursor:pointer;">
+                ← Return to shipping
+            </a>
+
+            <!-- Pagar -->
+            <button class="btn-next btn-black" 
+                    id="btn-complete-order"
+                    style="border-radius:12px; padding:13px 30px;"
+                    onclick="openConfirmPagoModal()">
+                Complete order
+            </button>
+        </div>
+    </div>
+<!-- ✅ CONFIRMACIÓN DE COMPRA -->
+<div id="orderSuccessBox"
+     style="display:none; margin-top:25px; padding:20px; border-radius:14px;
+            background:#f0fff4; border:1px solid #a7f3d0;">
+  <h3 style="margin:0 0 8px 0; color:#065f46;">
+    ✅ Compra completada con éxito
+  </h3>
+  <p style="margin:0; color:#065f46;">
+    Número de pedido: <strong id="orderNumberText"></strong>
+  </p>
 </div>
 
 </div>
-        <!-- PASO 3: PAGO -->
-        <div class="checkout-box" id="step3" style="display:none;">
-            <div class="step-title">Método de pago</div>
-
-            <p>Aquí iría la pasarela de pago. Por ahora es solo diseño.</p>
-
-            <button class="btn-next">Completar Pedido</button>
-        </div>
-    </div>
+</div>
 
 <!-- DERECHA: RESUMEN -->
 <div class="checkout-right">
@@ -507,17 +860,17 @@ select.input-field {
 
     <div class="total-line">
         <span>Subtotal:</span>
-        <strong>${{ carrito.totalPrice.gross.amount }}</strong>
+        <strong id="checkout-subtotal">${{ carrito.totalPrice.gross.amount }}</strong>
     </div>
     <div class="total-line">
         <span>Envío:</span>
-        <strong>Se calcula luego</strong>
+        <span id="checkout-envio"><strong style="color: #888;">$00,0</strong></span>
     </div>
 
     <hr>
 
     <div class="summary-total">
-        Total: ${{ carrito.totalPrice.gross.amount }}
+        Total: <span id="checkout-total">${{ carrito.totalPrice.gross.amount }}</span>
     </div>
 </div>
 
@@ -537,6 +890,167 @@ function goToStep(step){
 }
 </script>
 <script>
+// 🔥 CATÁLOGO DE PROVINCIAS Y CIUDADES
+const ciudadesPorProvincia = {
+    "Tungurahua": [
+        "Ambato",
+        "Baños de Agua Santa",
+        "Cevallos",
+        "Mocha",
+        "Patate",
+        "Quero",
+        "San Pedro de Pelileo",
+        "Santiago de Píllaro",
+        "Tisaleo"
+    ],
+    "Pichincha": [
+        "Quito",
+        "Cayambe",
+        "Mejía",
+        "Pedro Moncayo",
+        "Pedro Vicente Maldonado",
+        "Puerto Quito",
+        "Rumiñahui",
+        "San Miguel de los Bancos"
+    ],
+    "Chimborazo": [
+        "Riobamba",
+        "Alausí",
+        "Chambo",
+        "Chunchi",
+        "Colta",
+        "Cumandá",
+        "Guamote",
+        "Guano",
+        "Pallatanga",
+        "Penipe"
+    ]
+};
+
+// 🔥 TABLA DE COSTOS DE ENVÍO POR PROVINCIA Y CIUDAD
+const costosEnvio = {
+    "Tungurahua": {
+        "Ambato": 3.00,
+        "Baños de Agua Santa": 4.50,
+        "Cevallos": 3.50,
+        "Mocha": 4.00,
+        "Patate": 4.00,
+        "Quero": 4.50,
+        "San Pedro de Pelileo": 4.00,
+        "Santiago de Píllaro": 4.50,
+        "Tisaleo": 4.00
+    },
+    "Pichincha": {
+        "Quito": 5.00,
+        "Cayambe": 6.00,
+        "Mejía": 6.50,
+        "Pedro Moncayo": 6.50,
+        "Pedro Vicente Maldonado": 8.00,
+        "Puerto Quito": 8.00,
+        "Rumiñahui": 5.50,
+        "San Miguel de los Bancos": 7.00
+    },
+    "Chimborazo": {
+        "Riobamba": 4.00,
+        "Alausí": 5.50,
+        "Chambo": 4.50,
+        "Chunchi": 6.00,
+        "Colta": 5.00,
+        "Cumandá": 6.00,
+        "Guamote": 5.50,
+        "Guano": 4.50,
+        "Pallatanga": 6.50,
+        "Penipe": 5.00
+    }
+};
+
+// 🔥 ACTUALIZAR CIUDADES SEGÚN PROVINCIA SELECCIONADA
+function actualizarCiudades() {
+    const provinciaSelect = document.getElementById('shipping_province');
+    const ciudadSelect = document.getElementById('shipping_city');
+    const provinciaSeleccionada = provinciaSelect.value;
+    
+    // Limpiar opciones actuales
+    ciudadSelect.innerHTML = '';
+    
+    if (!provinciaSeleccionada) {
+        ciudadSelect.disabled = true;
+        ciudadSelect.innerHTML = '<option value="">Primero selecciona una provincia</option>';
+        
+        // 🔥 Resetear envío a $0.00
+        actualizarCostoEnvio(0, false);
+        return;
+    }
+    
+    // Habilitar el select de ciudades
+    ciudadSelect.disabled = false;
+    
+    // Agregar opción por defecto
+    const optionDefault = document.createElement('option');
+    optionDefault.value = '';
+    optionDefault.textContent = 'Selecciona una ciudad';
+    ciudadSelect.appendChild(optionDefault);
+    
+    // Agregar ciudades de la provincia seleccionada
+    const ciudades = ciudadesPorProvincia[provinciaSeleccionada] || [];
+    
+    ciudades.forEach(ciudad => {
+        const option = document.createElement('option');
+        option.value = ciudad;
+        option.textContent = ciudad;
+        ciudadSelect.appendChild(option);
+    });
+    
+    console.log(`✅ Cargadas ${ciudades.length} ciudades para ${provinciaSeleccionada}`);
+}
+
+// 🔥 CALCULAR Y ACTUALIZAR COSTO DE ENVÍO
+function calcularEnvio() {
+    const provincia = document.getElementById('shipping_province').value;
+    const ciudad = document.getElementById('shipping_city').value;
+    
+    if (!provincia || !ciudad) {
+        actualizarCostoEnvio(0, false);
+        return;
+    }
+    
+    // Obtener costo de envío
+    const costoEnvio = costosEnvio[provincia]?.[ciudad] || 0;
+    
+    if (costoEnvio > 0) {
+        actualizarCostoEnvio(costoEnvio, true);
+        console.log(`📦 Costo de envío para ${ciudad}, ${provincia}: $${costoEnvio}`);
+    } else {
+        actualizarCostoEnvio(0, false);
+        console.warn(`⚠️ No se encontró costo de envío para ${ciudad}, ${provincia}`);
+    }
+}
+
+// 🔥 ACTUALIZAR RESUMEN DE COSTOS EN EL LATERAL DERECHO
+function actualizarCostoEnvio(costoEnvio, calculado) {
+    const subtotalElement = document.getElementById('checkout-subtotal');
+    const envioElement = document.getElementById('checkout-envio');
+    const totalElement = document.getElementById('checkout-total');
+    
+    // Obtener subtotal del carrito
+    const subtotalText = subtotalElement.textContent.replace('$', '').trim();
+    const subtotal = parseFloat(subtotalText) || 0;
+    
+    // 🔥 Actualizar envío: SIEMPRE mostrar valor numérico
+    if (calculado && costoEnvio > 0) {
+        envioElement.innerHTML = `<strong style="color: #28a745;">$${costoEnvio.toFixed(2)}</strong>`;
+    } else {
+        // 🔥 Mostrar $0.00 en lugar de "Se calcula luego"
+        envioElement.innerHTML = '<strong style="color: #888;">$0.00</strong>';
+    }
+    
+    // Calcular y actualizar total
+    const total = subtotal + costoEnvio;
+    totalElement.textContent = `$${total.toFixed(2)}`;
+    
+    console.log(`💰 Subtotal: $${subtotal.toFixed(2)} | Envío: $${costoEnvio.toFixed(2)} | Total: $${total.toFixed(2)}`);
+}
+
 // 🔥 FUNCIÓN PARA MOSTRAR TOAST
 function showToast(message, type = 'error') {
     const toast = document.getElementById('toast');
@@ -576,6 +1090,7 @@ function validateStep1() {
     
     console.log('✅ Paso 1 validado, continuando al paso 2...');
     showToast('✅ Información guardada correctamente', 'success');
+    mostrarPreviewContacto();
     
     // Esperar a que se vea el toast de éxito antes de cambiar de paso
     setTimeout(() => {
@@ -583,7 +1098,119 @@ function validateStep1() {
     }, 500);
 }
 
-function goToStep(step){
+// 🔥 MOSTRAR PREVIEW CON DATOS DEL BACKEND (Saleor/Django)
+function mostrarPreviewContacto() {
+    // 🔥 Estos datos vienen del template (datos_usuario)
+    const datosUsuario = {
+        first_name: "{{ datos_usuario.first_name }}",
+        last_name: "{{ datos_usuario.last_name }}",
+        email: "{{ datos_usuario.email }}",
+        phone: "{{ datos_usuario.phone }}"
+    };
+    
+    document.getElementById('preview_name').textContent = 
+        `${datosUsuario.first_name} ${datosUsuario.last_name}`;
+    document.getElementById('preview_email').textContent = datosUsuario.email;
+    document.getElementById('preview_phone').textContent = datosUsuario.phone;
+}
+
+// 🔥 VALIDAR PASO 2 (DIRECCIÓN DE ENVÍO)
+function validateStep2() {
+    const required = [
+        { id: 'shipping_province', label: 'Provincia' },
+        { id: 'shipping_city', label: 'Ciudad' },
+        { id: 'shipping_address_1', label: 'Dirección principal' },
+        { id: 'shipping_postal_code', label: 'Código Postal' }
+    ];
+    
+    // Validar campos requeridos
+    for (let field of required) {
+        const input = document.getElementById(field.id);
+        if (!input.value.trim()) {
+            showToast(`⚠️ El campo "${field.label}" es obligatorio`, 'warning');
+            input.focus();
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    }
+    
+    // Validar código postal (6 dígitos)
+    const postalCode = document.getElementById('shipping_postal_code').value;
+    if (!/^\d{6}$/.test(postalCode)) {
+        showToast('⚠️ El código postal debe tener 6 dígitos', 'warning');
+        document.getElementById('shipping_postal_code').focus();
+        return;
+    }
+    
+    console.log('✅ Paso 2 validado');
+    
+    // 🔥 Preparar datos para el PASO 3
+    prepararDatosParaPago();
+    
+    showToast('✅ Dirección validada correctamente', 'success');
+    
+    setTimeout(() => {
+        goToStep(3);
+    }, 500);
+}
+
+// 🔥 PREPARAR DATOS COMPLETOS PARA EL PASO 3 (PAGO)
+function prepararDatosParaPago() {
+    // 🔥 Datos del backend (Saleor/Django)
+    const datosBackend = {
+        email: "{{ datos_usuario.email }}",
+        first_name: "{{ datos_usuario.first_name }}",
+        last_name: "{{ datos_usuario.last_name }}",
+        doc_number: "{{ datos_usuario.doc_number }}",
+        phone: "{{ datos_usuario.phone }}"
+    };
+    
+    // 🔥 OBTENER COSTO DE ENVÍO ACTUAL
+    const provincia = document.getElementById('shipping_province').value;
+    const ciudad = document.getElementById('shipping_city').value;
+    const costoEnvio = costosEnvio[provincia]?.[ciudad] || 0;
+    
+    // 🔥 Datos del formulario de envío (PASO 2)
+    const datosEnvio = {
+        country: 'EC',
+        province: provincia,
+        city: ciudad,
+        address_1: document.getElementById('shipping_address_1').value,
+        address_2: document.getElementById('shipping_address_2').value || '',
+        postal_code: document.getElementById('shipping_postal_code').value,
+        save_address: document.getElementById('save_address').checked,
+        shipping_cost: costoEnvio
+    };
+    
+    // 🔥 Combinar datos para Saleor
+    const datosCompletosParaSaleor = {
+        // Datos de contacto (de Saleor)
+        first_name: datosBackend.first_name,
+        last_name: datosBackend.last_name,
+        phone: datosBackend.phone,
+        
+        // Datos de dirección (del formulario)
+        country: datosEnvio.country,
+        city_area: datosEnvio.province,  // Provincia → city_area en Saleor
+        city: datosEnvio.city,
+        street_address_1: datosEnvio.address_1,
+        street_address_2: datosEnvio.address_2,
+        postal_code: datosEnvio.postal_code,
+        
+        // Metadatos
+        save_address: datosEnvio.save_address,
+        shipping_cost: datosEnvio.shipping_cost,
+        timestamp: new Date().toISOString()
+    };
+    
+    // 🔥 Guardar en localStorage temporalmente
+    localStorage.setItem('checkout_shipping_data', JSON.stringify(datosCompletosParaSaleor));
+    
+    console.log('💾 Datos preparados para Saleor:', datosCompletosParaSaleor);
+}
+
+// 🔥 NAVEGAR ENTRE PASOS
+function goToStep(step) {
     document.getElementById("step1").style.display = step === 1 ? "block" : "none";
     document.getElementById("step2").style.display = step === 2 ? "block" : "none";
     document.getElementById("step3").style.display = step === 3 ? "block" : "none";
@@ -593,7 +1220,220 @@ function goToStep(step){
     document.getElementById("stepNav3").classList.remove("active");
 
     document.getElementById("stepNav" + step).classList.add("active");
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 🔥 AL CARGAR LA PÁGINA
+document.addEventListener('DOMContentLoaded', function() {
+    mostrarPreviewContacto();
+    
+    // 🔥 Agregar listener al select de ciudad
+    const ciudadSelect = document.getElementById('shipping_city');
+    if (ciudadSelect) {
+        ciudadSelect.addEventListener('change', calcularEnvio);
+    }
+});
+// ==================================================================
+// 🔥 PASO 3: LÓGICA DE PAGOS
+// ==================================================================
+
+// Seleccionar método de pago
+function selectPaymentMethod(method) {
+    const cardRadio = document.getElementById('payment-card-radio');
+    const paypalRadio = document.getElementById('payment-paypal-radio');
+    const cardForm = document.getElementById('card-form');
+    const paypalForm = document.getElementById('paypal-form');
+    
+    if (method === 'card') {
+        cardRadio.checked = true;
+        cardForm.style.display = 'block';
+        paypalForm.style.display = 'none';
+    } else if (method === 'paypal') {
+        paypalRadio.checked = true;
+        cardForm.style.display = 'none';
+        paypalForm.style.display = 'block';
+    }
+}
+
+
+
+// 🔥 FUNCIÓN: Crear dirección en Saleor
+async function crearDireccionEnSaleor(shippingData) {
+    // Ya no se usa - se hace en el backend
+    return true;
+}
+
+// 🔥 FUNCIÓN: Asignar dirección al checkout
+async function asignarDireccionAlCheckout(checkoutToken, addressId, shippingCost) {
+    // Ya no se usa - se hace en el backend
+    return true;
+}
+
+// 🔥 FUNCIÓN: Procesar pago con Dummy Gateway
+async function procesarPagoConDummy(checkoutToken) {
+    // Ya no se usa - se hace en el backend
+    return { success: true };
+}
+
+// 🔥 FUNCIÓN: Completar orden
+async function completarOrden(checkoutToken) {
+    // Ya no se usa - se hace en el backend
+    return { success: true, orderId: '12345' };
+}
+function openConfirmPagoModal() {
+  document.getElementById('confirmPagoOverlay').style.display = 'block';
+}
+
+function closeConfirmPagoModal() {
+  document.getElementById('confirmPagoOverlay').style.display = 'none';
+}
+
+async function confirmarPagoAhora() {
+  // Evita doble click
+  const btn = document.getElementById('btn-confirmar-pago');
+  btn.disabled = true;
+  btn.textContent = 'Procesando...';
+
+  closeConfirmPagoModal();
+  await procesarPago();
+
+  // por si falla, re-habilita
+  btn.disabled = false;
+  btn.textContent = 'Sí, completar';
+}
+
+// 🔥 NUEVA FUNCIÓN: Procesar pago (llama al backend)
+async function procesarPago() {
+    const btnCompleteOrder = document.getElementById('btn-complete-order');
+    
+    // Deshabilitar botón
+    btnCompleteOrder.disabled = true;
+    btnCompleteOrder.textContent = 'Processing...';
+    
+    try {
+        // Obtener datos de localStorage
+        const shippingData = JSON.parse(localStorage.getItem('checkout_shipping_data') || '{}');
+        
+        // Obtener total del carrito
+        const totalElement = document.getElementById('checkout-total');
+        const totalText = totalElement.textContent.replace('$', '').trim();
+        const totalAmount = parseFloat(totalText) || 0;
+        
+        console.log('📦 Datos de envío:', shippingData);
+        console.log('💰 Total:', totalAmount);
+        
+        // Validar datos
+        if (!shippingData.city) {
+            showToast('⚠️ Por favor completa la dirección de envío', 'warning');
+            goToStep(2);
+            throw new Error('Missing shipping data');
+        }
+        
+        if (totalAmount <= 0) {
+            showToast('⚠️ Error: Monto total inválido', 'error');
+            throw new Error('Invalid total amount');
+        }
+        
+        // 🔥 Llamar al backend
+        showToast('⏳ Procesando pago...', 'info');
+        
+        const response = await fetch('/catalogo/carrito/procesar-pago/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                shipping_data: shippingData,
+                total_amount: totalAmount
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Error procesando pago');
+        }
+        
+        // ✅ ÉXITO
+        console.log('✅ Orden completada:', result);
+        showToast('✅ ¡Orden completada exitosamente!', 'success');
+
+        // 🧾 Mostrar confirmación en la misma página
+        document.getElementById("orderNumberText").textContent = result.order_number;
+        document.getElementById("orderSuccessBox").style.display = "block";
+
+        // 🔒 Opcional: desactivar botón de pago
+        document.getElementById("btn-complete-order").disabled = true;
+        document.getElementById("btn-complete-order").textContent = "Pedido completado";
+
+        // 🔒 Opcional: desactivar inputs
+        document.querySelectorAll("input, select, textarea").forEach(el => {
+            el.disabled = true;
+        });
+
+        
+        // Limpiar datos
+        localStorage.removeItem('checkout_shipping_data');
+        
+        // Redirigir a página de confirmación
+        setTimeout(() => {
+            //window.location.href = `/order-confirmation/${result.order_number}/`;
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ Error procesando pago:', error);
+        showToast(`❌ ${error.message}`, 'error');
+        
+        // Re-habilitar botón
+        btnCompleteOrder.disabled = false;
+        btnCompleteOrder.textContent = 'Complete order';
+    }
+}
+
+// Función auxiliar para obtener CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 </script>
+
 <div id="toast"></div>
+
+<!-- ✅ MODAL CONFIRMAR PAGO -->
+<div id="confirmPagoOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999;">
+  <div style="max-width:420px; margin:12vh auto; background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.2);">
+    <h3 style="margin:0 0 6px 0; font-size:18px;">Confirmar compra</h3>
+    <p style="margin:0 0 14px 0; font-size:14px; color:#555;">
+      ¿Deseas completar el pago y generar la orden?
+    </p>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button"
+              onclick="closeConfirmPagoModal()"
+              style="padding:10px 14px; border-radius:12px; border:1px solid #ddd; background:#fff; cursor:pointer;">
+        Cancelar
+      </button>
+
+      <button type="button"
+              id="btn-confirmar-pago"
+              onclick="confirmarPagoAhora()"
+              style="padding:10px 14px; border-radius:12px; border:none; background:#111; color:#fff; cursor:pointer;">
+        Sí, completar
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

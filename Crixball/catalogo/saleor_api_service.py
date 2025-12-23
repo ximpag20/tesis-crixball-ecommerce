@@ -77,6 +77,13 @@ class SaleorAPIService:
             
             if response.status_code == 200:
                 data = response.json()
+
+                    # 🔥 MOSTRAR ERRORES GRAPHQL (CLAVE)
+                if "errors" in data:
+                    print("❌ GraphQL errors:")
+                    for err in data["errors"]:
+                        print(err)
+                    return None
                 if 'data' in data:
                     return data['data']
             
@@ -308,7 +315,7 @@ class SaleorAPIService:
         except:
             return 'Sin descripción'
 
-    def actualizar_stock_variante(self, variante_id: str, nueva_cantidad: int) -> bool:
+    def actualizar_stock_variante(self, variante_id: str, nueva_cantidad: int, warehouse_id: str) -> bool:
         """
         Actualiza el stock de una variante en Saleor
         
@@ -338,9 +345,7 @@ class SaleorAPIService:
         """
         
         # ID del warehouse por defecto de Saleor
-        # Ajusta esto según tu configuración
-        warehouse_id = "V2FyZWhvdXNlOjVjN2IyODRmLTk4YTQtNDg2YS1hZTYwLWUwMTlkZWRlZTk0Yg=="  # ID del warehouse por defecto
-        
+        # Ajusta esto según tu configuración        
         variables = {
             "variantId": variante_id,
             "quantity": nueva_cantidad,
@@ -618,5 +623,146 @@ class SaleorAPIService:
         response = self._ejecutar_query(query, variables)
 
         return response.get("checkoutLinesUpdate", None)
+    
+    def forzar_stock(self, variant_id, quantity, warehouse_id):
+        mutation = """
+        mutation UpdateStock($variantId: ID!, $warehouseId: ID!, $quantity: Int!) {
+        productVariantStocksUpdate(
+            variantId: $variantId,
+            stocks: [{ warehouse: $warehouseId, quantity: $quantity }]
+        ) {
+            errors { field message code }
+        }
+        }
+        """
+        variables = {
+            "variantId": variant_id,
+            "warehouseId": warehouse_id,
+            "quantity": quantity,
+        }
 
+        return self._ejecutar_query(mutation, variables)
+
+    def habilitar_variante_en_canal(self, variant_id, channel_slug):
+        mutation = """
+        mutation EnableVariantInChannel($id: ID!, $channelSlug: String!) {
+        productVariantChannelListingUpdate(
+            id: $id,
+            input: {
+            channelListings: [{
+                channelSlug: $channelSlug,
+                isPublished: true,
+                availableForPurchaseAt: "2020-01-01T00:00:00Z"
+            }]
+            }
+        ) {
+            errors { field message code }
+        }
+        }
+        """
+        variables = {
+            "id": variant_id,
+            "channelSlug": channel_slug
+        }
+
+        return self._ejecutar_query(mutation, variables)
+
+    def debug_shipping_zones(self):
+        query = """
+        query {
+        shippingZones(first: 50) {
+            edges {
+            node {
+                id
+                name
+                countries {
+                code
+                country
+                }
+                warehouses {
+                edges {
+                    node { id name }
+                }
+                }
+            }
+            }
+        }
+        }
+        """
+        data = self._ejecutar_query(query)
+        if not data:
+            return None
+        return data.get("shippingZones")
+
+    def debug_warehouses(self):
+        query = """
+        query {
+        warehouses(first: 10) {
+            edges {
+            node {
+                id
+                name
+            }
+            }
+        }
+        }
+        """
+        return self._ejecutar_query(query)
+
+    def obtener_lineas_orden(self, order_id):
+        query = """
+        query OrderLines($id: ID!) {
+        order(id: $id) {
+            lines {
+            id
+            quantity
+            }
+        }
+        }
+        """
+        variables = {"id": order_id}
+        data = self._ejecutar_query(query, variables)
+
+        if not data or not data.get("order"):
+            return []
+
+        return data["order"]["lines"]
+    
+    
+    def crear_fulfillment(self, order_id, lines):
+        mutation = """
+        mutation FulfillOrder($orderId: ID!, $lines: [OrderFulfillLineInput!]!) {
+        orderFulfill(
+            order: $orderId,
+            lines: $lines
+        ) {
+            fulfillment {
+            id
+            status
+            }
+            errors {
+            field
+            message
+            }
+        }
+        }
+        """
+
+        variables = {
+            "orderId": order_id,
+            "lines": lines
+        }
+
+        data = self._ejecutar_query(mutation, variables)
+
+        if not data:
+            return False
+
+        errors = data["orderFulfill"].get("errors", [])
+        if errors:
+            print("❌ Error en fulfillment:", errors)
+            return False
+
+        print("🚚 Fulfillment creado correctamente")
+        return True
 

@@ -13,6 +13,9 @@ from .saleor_user_service import SaleorUserService
 from .saleor_api_service import SaleorAPIService
 import json
 
+from .checkout_service import CheckoutService
+from django.views.decorators.http import require_http_methods
+
 #uso de decoradores
 @login_required
 def Catalogo(request):
@@ -524,4 +527,337 @@ def carrito_actualizar_cantidad(request):
         "checkout": checkout_data
     })
 
+@login_required
+@require_http_methods(["POST"])
+def procesar_pago_checkout(request):
+    """
+    Procesa el pago y completa la orden.
 
+    Flujo (ajustado a tu arquitectura):
+    1) (Django -> Saleor) Sincronizar stock REAL por talla y ajustar/eliminar líneas del checkout.
+    2) Asignar dirección al checkout (ya con stock consistente).
+    3) Asignar método de envío.
+    4) Crear pago Dummy.
+    5) Completar orden.
+    6) Descontar stock REAL en Django (ProductoTalla) una sola vez.
+    """
+    try:
+        import json
+        from django.http import JsonResponse
+        from django.conf import settings
+        from django.db import transaction
+
+        from .checkout_service import CheckoutService
+        from .saleor_api_service import SaleorAPIService
+        from .models import ProductoTalla
+
+        # -----------------------------
+        # Datos de entrada
+        # -----------------------------
+        data = json.loads(request.body)
+
+        shipping_data = data.get("shipping_data", {})
+        shipping_cost = float(shipping_data.get("shipping_cost", 0) or 0)
+        checkout_token = request.session.get("checkout_token")
+
+        print(f"\n{'='*60}")
+        print("🚀 INICIANDO PROCESO DE PAGO")
+        print(f"{'='*60}")
+        print(f"📦 Checkout token: {checkout_token}")
+        print(f"📍 Shipping data: {shipping_data}")
+
+        # -----------------------------
+        # Validaciones básicas
+        # -----------------------------
+        if not checkout_token:
+            return JsonResponse({
+                "success": False,
+                "error": "No se encontró el checkout token",
+                "step": "no_token"
+            }, status=400)
+
+        if not shipping_data.get("city"):
+            return JsonResponse({
+                "success": False,
+                "error": "Datos de envío incompletos",
+                "step": "shipping_data"
+            }, status=400)
+
+        checkout_service = CheckoutService()
+        saleor = SaleorAPIService()
+
+        # ================================================================
+        # 🔥 PASO 1.5: Stock REAL (Django -> Saleor) + Ajuste de líneas
+        # ================================================================
+        print("\n📦 PASO 1.5: Sincronizando stock REAL (Django → Saleor)")
+
+        checkout_data = saleor.obtener_checkout(checkout_token)
+        if not checkout_data or not checkout_data.get("lines"):
+            return JsonResponse({
+                "success": False,
+                "error": "El carrito está vacío o no se pudo obtener el checkout",
+                "step": "empty_checkout"
+            }, status=400)
+
+        hubo_ajustes = False
+
+        for line in checkout_data["lines"]:
+            line_id = line.get("id")
+            qty = int(line.get("quantity", 0))
+            variant = line.get("variant") or {}
+            variant_id = variant.get("id")
+            raw_variant_name = (variant.get("name") or "").strip()  # ej: "Talla 30"
+
+            # Normalizar "Talla 30" -> "30"
+            talla_normalizada = raw_variant_name.replace("Talla", "").strip()
+
+            print(f"🧵 Variante: {raw_variant_name} | Normalizada: {talla_normalizada} | Qty: {qty}")
+
+            # Buscar stock real en Django (ProductoTalla.cantidad_disponible)
+            pt = ProductoTalla.objects.select_related("producto", "talla").filter(
+                talla__talla=talla_normalizada
+            ).first()
+
+            if not pt:
+                print(f"   ❌ No existe ProductoTalla para talla '{talla_normalizada}' -> eliminando línea")
+                hubo_ajustes = True
+                saleor.eliminar_linea_checkout(checkout_token, line_id)
+                continue
+
+            stock_real = int(pt.cantidad_disponible)
+            print(f"   📦 Stock REAL Django: {stock_real}")
+
+            # SETEAR stock real en Saleor para que deje de ver 0
+            # (Asegúrate de tener settings.SALEOR_WAREHOUSE_ID configurado)
+            # 1️⃣ Forzar stock real
+            saleor.forzar_stock(
+                variant_id=variant_id,
+                quantity=stock_real,
+                warehouse_id=settings.SALEOR_WAREHOUSE_ID
+            )
+
+            # 2️⃣ Habilitar variante en el canal
+            saleor.habilitar_variante_en_canal(
+                variant_id=variant_id,
+                channel_slug=settings.SALEOR_CHANNEL_SLUG
+            )
+
+
+            # Ajustar/eliminar cantidades si exceden stock real
+            if qty > stock_real:
+                hubo_ajustes = True
+                if stock_real <= 0:
+                    print("   ❌ Stock real 0 -> eliminando línea")
+                    saleor.eliminar_linea_checkout(checkout_token, line_id)
+                else:
+                    print(f"   ⚠️ Ajustando qty a {stock_real}")
+                    saleor.actualizar_cantidad_linea(
+                        checkout_data.get("id"),
+                        line_id,
+                        stock_real
+                    )
+
+        # Refrescar para recalcular y que Saleor valide ya con stock consistente
+        if not checkout_service.refrescar_checkout(checkout_token):
+            return JsonResponse({
+                "success": False,
+                "error": "No se pudo refrescar el checkout",
+                "step": "refresh_checkout"
+            }, status=500)
+
+        checkout_data = saleor.obtener_checkout(checkout_token)
+        if not checkout_data or not checkout_data.get("lines"):
+            return JsonResponse({
+                "success": False,
+                "error": "El carrito quedó vacío por falta de stock",
+                "step": "stock_empty"
+            }, status=409)
+
+        if hubo_ajustes:
+            print("✅ Checkout ajustado según stock real de Django")
+
+        # ================================================================
+        # PASO 1: (Opcional) Crear dirección en Saleor (si tu servicio lo requiere)
+        # ================================================================
+        print("\n📍 PASO 1: Creando dirección de envío (si aplica)...")
+        address_id = checkout_service.crear_direccion_envio(shipping_data)
+        if not address_id:
+            return JsonResponse({
+                "success": False,
+                "error": "No se pudo crear la dirección de envío",
+                "step": "create_address"
+            }, status=500)
+        zones = saleor.debug_shipping_zones()
+        print("🌍 SHIPPING ZONES:", zones)
+        # ================================================================
+        # PASO 2: Asignar dirección al checkout
+        # ================================================================
+        print("\n🛒 PASO 2: Asignando dirección al checkout...")
+
+        if not checkout_service.asignar_direccion_checkout(checkout_token, shipping_data):
+            # Si tu CheckoutService guarda errores (last_errors), los devolvemos
+            saleor_errors = getattr(checkout_service, "last_errors", None)
+            payload = {
+                "success": False,
+                "error": "No se pudo asignar la dirección al checkout",
+                "step": "assign_address"
+            }
+            if saleor_errors:
+                payload["saleor_errors"] = saleor_errors
+            return JsonResponse(payload, status=409)
+
+        # ================================================================
+        # PASO 2.5: Asignar método de envío
+        # ================================================================
+        print("\n📦 PASO 2.5: Asignando método de envío...")
+
+        if not checkout_service.asignar_metodo_envio(checkout_token, shipping_cost):
+            return JsonResponse({
+                "success": False,
+                "error": "No se pudo asignar el método de envío",
+                "step": "assign_shipping_method"
+            }, status=500)
+        
+
+        # Obtener checkout completo para extraer el ID Base64
+        checkout_data = saleor.obtener_checkout(checkout_token)
+        checkout_id = checkout_data.get("id")
+
+        if not checkout_id:
+            return JsonResponse({
+                "success": False,
+                "error": "No se pudo obtener checkoutId",
+                "step": "get_checkout_id"
+            }, status=500)
+
+
+        # ================================================================
+        # PASO 2.8: Asignar dirección de facturación (Billing Address)
+        # ================================================================
+        print(f"\n🧾 PASO 2.8: Asignando dirección de facturación...")
+
+        if not checkout_service.asignar_billing_address_checkout(
+            checkout_id,
+            shipping_data  # reutilizamos la misma info
+        ):
+            return JsonResponse({
+                'success': False,
+                'error': 'No se pudo asignar la dirección de facturación',
+                'step': 'assign_billing_address'
+            }, status=500)
+
+
+        # ================================================================
+        # PASO 3: Crear pago con Dummy
+        # ================================================================
+        print("\n💳 PASO 3: Procesando pago con Dummy Gateway...")
+
+        total_amount = float(data.get("total_amount", 0) or 0)
+        if total_amount <= 0:
+            return JsonResponse({
+                "success": False,
+                "error": "Monto total inválido",
+                "step": "payment"
+            }, status=400)
+
+        payment_result = checkout_service.crear_pago_dummy(checkout_token, total_amount)
+        if not payment_result or not payment_result.get("success"):
+            return JsonResponse({
+                "success": False,
+                "error": "No se pudo procesar el pago",
+                "step": "payment"
+            }, status=500)
+
+        # ================================================================
+        # PASO 4: Completar orden + descontar stock REAL en Django
+        # ================================================================
+        print("\n✅ PASO 4: Completando orden...")
+
+        order_result = checkout_service.completar_orden(checkout_token)
+        if not order_result or not order_result.get("success"):
+            return JsonResponse({
+                "success": False,
+                "error": "No se pudo completar la orden",
+                "step": "complete_order"
+            }, status=500)
+
+        # 🔥 Descontar stock REAL en Django (una sola vez) de forma segura
+        # Nota: usamos el checkout_data que acabamos de obtener (ya ajustado).
+        with transaction.atomic():
+            for line in checkout_data.get("lines", []):
+                qty = int(line.get("quantity", 0))
+                raw_variant_name = (line.get("variant", {}).get("name") or "").strip()
+                talla_normalizada = raw_variant_name.replace("Talla", "").strip()
+
+                pt = ProductoTalla.objects.select_for_update().select_related("talla").filter(
+                    talla__talla=talla_normalizada
+                ).first()
+
+                if not pt:
+                    print(f"⚠️ No se encontró ProductoTalla para '{talla_normalizada}' (no se descuenta)")
+                    continue
+
+                # Evitar negativos por seguridad
+                if pt.cantidad_disponible < qty:
+                    print(f"⚠️ Stock inconsistente en Django para '{talla_normalizada}' "
+                          f"(Disp: {pt.cantidad_disponible}, Pedido: {qty}) -> se deja en 0")
+                    pt.cantidad_disponible = 0
+                else:
+                    pt.cantidad_disponible -= qty
+
+                pt.save()
+
+        # ================================================================
+        # 🔥 PASO 5: Fulfillment automático (descuento stock en Saleor)
+        # ================================================================
+        saleor = SaleorAPIService()
+
+        order_id = order_result["order_id"]  # Base64
+        order_lines = saleor.obtener_lineas_orden(order_id)
+
+        lines_input = [
+            {
+                "orderLineId": line["id"],
+                "quantity": line["quantity"]
+            }
+            for line in order_lines
+        ]
+
+        saleor.crear_fulfillment(order_id, lines_input)
+
+
+        # ================================================================
+        # ✅ ÉXITO
+        # ================================================================
+        print(f"\n{'='*60}")
+        print("✅ ORDEN COMPLETADA EXITOSAMENTE")
+        print(f"   Order ID: {order_result.get('order_id')}")
+        print(f"   Order Number: {order_result.get('order_number')}")
+        print(f"{'='*60}\n")
+
+        # Limpiar sesión
+        if "checkout_token" in request.session:
+            del request.session["checkout_token"]
+
+        return JsonResponse({
+            "success": True,
+            "order_id": order_result.get("order_id"),
+            "order_number": order_result.get("order_number"),
+            "total": order_result.get("total")
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            "success": False,
+            "error": "JSON inválido",
+            "step": "json"
+        }, status=400)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            "success": False,
+            "error": f"Error interno: {str(e)}",
+            "step": "exception"
+        }, status=500)

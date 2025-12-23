@@ -1121,3 +1121,28 @@ patch_local()
 
 # 🔥 DESACTIVAR CONFIRMACIÓN DE EMAIL PARA REGISTRO
 ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL = False
+
+# ==============================================================================
+# PAYMENT GATEWAYS CONFIGURATION
+# ==============================================================================
+
+# Plugins de pago activos
+PLUGINS = [
+    "saleor.plugins.webhook.plugin.WebhookPlugin",
+    "saleor.payment.gateways.dummy.plugin.DeprecatedDummyGatewayPlugin",
+    
+    # "saleor.payment.gateways.stripe.plugin.StripeGatewayPlugin",  # TODO: Activar cuando tengas claves
+]
+
+# Configuración de gateways
+PAYMENT_GATEWAYS = {
+    "mirumee.payments.dummy": {  # 🔥 USAR ESTA CLAVE
+        "module": "saleor.payment.gateways.dummy",
+        "config": {
+            "Store customers card": False,
+            "Automatic payment capture": True,
+            "Supported currencies": "USD",
+        },
+    },
+    
+}
