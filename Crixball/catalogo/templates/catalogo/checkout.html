@@ -695,149 +695,153 @@ select.input-field {
     <div class="row-2">
         <div class="col">
             <h2 class="step-title">Payment</h2>
-            <p class="step-subtitle" style="color: #888; font-size: 13px; margin-bottom: 20px;">
+            <p class="step-subtitle" style="color:#888;font-size:13px;margin-bottom:20px;">
                 All transactions are secure and encrypted.
             </p>
         </div>
     </div>
 
-    <!-- 🔥 OPCIÓN 1: TARJETA DE CRÉDITO/DÉBITO (STRIPE) -->
+    <!-- 🔥 MÉTODO: TARJETA -->
     <div class="payment-option" id="payment-card-option">
         <label class="payment-method-header" onclick="selectPaymentMethod('card')">
-            <div style="display: flex; align-items: center; flex: 1;">
+            <div style="display:flex;align-items:center;flex:1;">
                 <input type="radio" name="payment_method" value="card" id="payment-card-radio" checked>
                 <span class="payment-method-title">Credit card</span>
             </div>
+
             <div class="payment-logos">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" 
-                     alt="Visa" style="height: 20px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
-                     alt="Mastercard" style="height: 20px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg" 
-                     alt="Amex" style="height: 20px;">
-                <span style="font-size: 12px; color: #888; margin-left: 5px;">+5</span>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" style="height:20px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" style="height:20px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg" style="height:20px;">
+                <span style="font-size:12px;color:#888;margin-left:5px;">+5</span>
             </div>
         </label>
 
-        <!-- Formulario de tarjeta -->
+        <!-- 🔥 Selector Dummy / Stripe -->
+        <div class="payment-mode-selector">
+            <label class="mode-option">
+                <input type="radio" name="card_payment_mode" value="stripe" onclick="toggleCardMode('stripe')">
+                <span> Stripe (Real card) </span>
+            </label>
+
+            <label class="mode-option">
+                <input type="radio" name="card_payment_mode" value="dummy" checked onclick="toggleCardMode('dummy')">
+                <span> Dummy Test Mode </span>
+            </label>
+        </div>
+
+        <style>
+        .payment-mode-selector{
+            display:flex;gap:12px;margin-top:10px;margin-bottom:18px;flex-wrap:wrap;
+        }
+        .mode-option{
+            display:flex;align-items:center;gap:6px;background:#f8f8f8;padding:7px 14px;
+            border-radius:8px;cursor:pointer;border:1px solid #ddd;transition:.25s;font-size:14px;
+        }
+        .mode-option:hover{
+            background:#eef5ff;border-color:#3b82f6;
+        }
+        .mode-option input{ accent-color:#2563eb;cursor:pointer; }
+
+        .dummy-box{
+            background:#fff7ce;padding:14px;border-radius:10px;border-left:4px solid #ffcc00;
+            font-size:13px;color:#6b5b00;margin-bottom:20px;
+        }
+
+        /* Stripe */
+        .stripe-form label{ font-size:13px;color:#333;margin-bottom:3px;display:block;}
+        .stripe-input{
+            border:1px solid #ddd;border-radius:8px;padding:10px;background:white;margin-bottom:12px;
+        }
+        .stripe-input-text{ width:100%; }
+        .stripe-row{display:flex;gap:12px;}
+        .stripe-error{color:#e63946;font-size:13px;margin-top:3px;}
+        </style>
+
         <div class="payment-form-content" id="card-form">
-            
-            <!-- 🔥 MODO DUMMY (Visible por ahora) -->
-            <div id="dummy-payment-info" style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
-                <strong style="color: #856404;">🧪 Test Mode (Dummy Gateway)</strong>
-                <p style="font-size: 13px; color: #856404; margin: 5px 0 0 0;">
-                    This is a test payment gateway. All orders will be automatically approved. 
-                    No real charges will be made.
-                </p>
+
+            <!-- 🧪 Dummy (default visible) -->
+            <div id="dummy-payment-info" class="dummy-box">
+                <b>🧪 Dummy Sandbox</b>
+                <p>No real charges. Orders auto-approved.</p>
             </div>
 
-            <!-- 🔥 FORMULARIO STRIPE (Oculto por ahora, se mostrará cuando actives Stripe) -->
-            <div id="stripe-payment-form" style="display: none;">
-                <!-- Card Number -->
-                <div class="input-group">
-                    <label class="input-label-small">Card number</label>
-                    <div class="input-with-icon">
-                        <div id="card-number-element" class="stripe-element"></div>
-                        <span class="input-icon-lock">🔒</span>
+            <!-- 💳 Stripe -->
+            <div id="stripe-payment-form" class="stripe-form" style="display:none;">
+                        
+                <label>Card number</label>
+                <div id="card-number-element" class="stripe-input"></div>
+
+                <div class="stripe-row">
+                    <div style="flex:1;">
+                        <label>Expiration (MM/YY)</label>
+                        <div id="card-expiry-element" class="stripe-input"></div>
+                    </div>
+                    <div style="flex:1;">
+                        <label>CVC</label>
+                        <div id="card-cvc-element" class="stripe-input"></div>
                     </div>
                 </div>
 
-                <!-- Expiry + CVV -->
-                <div class="row-2" style="gap: 10px; margin-bottom: 15px;">
-                    <div class="col">
-                        <label class="input-label-small">Expiration date (MM / YY)</label>
-                        <div id="card-expiry-element" class="stripe-element"></div>
-                    </div>
-                    <div class="col">
-                        <label class="input-label-small">Security code</label>
-                        <div class="input-with-icon">
-                            <div id="card-cvc-element" class="stripe-element"></div>
-                            <span class="input-icon-help" title="3 digits on back of card">ⓘ</span>
-                        </div>
-                    </div>
-                </div>
+                <label>Name on card</label>
+                <input type="text" id="cardholder-name" class="stripe-input stripe-input-text" placeholder="John Doe">
 
-                <!-- Name on Card -->
-                <div class="input-group">
-                    <label class="input-label-small">Name on card</label>
-                    <input type="text" id="cardholder-name" class="input-field-payment" 
-                           placeholder="Name on card">
-                </div>
-
-                <!-- Error de Stripe -->
-                <div id="card-errors" style="color: #dc3545; font-size: 13px; margin-top: 10px;"></div>
+                <div id="card-errors" class="stripe-error"></div>
             </div>
 
-            <!-- Checkbox: usar dirección de envío -->
-            <div class="checkbox-block" style="margin-top: 15px;">
-                <label>
-                    <input type="checkbox" id="use_shipping_address" checked>
-                    Use shipping address as billing address
-                </label>
+            <div class="checkbox-block" style="margin-top:15px;">
+                <label><input type="checkbox" id="use_shipping_address" checked> Use shipping address for billing</label>
             </div>
         </div>
     </div>
 
-    <!-- 🔥 OPCIÓN 2: PAYPAL (Preparado para futuro) -->
-    <div class="payment-option" id="payment-paypal-option" style="opacity: 0.5; pointer-events: none;">
+    <!-- 🔥 PAYPAL (futuro) -->
+    <div class="payment-option" id="payment-paypal-option">
         <label class="payment-method-header">
-            <div style="display: flex; align-items: center; flex: 1;">
-                <input type="radio" name="payment_method" value="paypal" id="payment-paypal-radio" disabled>
+            <div style="display:flex;align-items:center;flex:1;">
+                <input type="radio" name="payment_method" value="paypal" id="payment-paypal-radio" onclick="selectPaymentMethod('paypal')">
                 <span class="payment-method-title">PayPal</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 11px; color: #999; background: #f0f0f0; padding: 3px 8px; border-radius: 4px;">Coming soon</span>
-                <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_74x46.jpg" 
-                     alt="PayPal" style="height: 24px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_74x46.jpg" style="height:24px;">
             </div>
         </label>
-
-        <!-- Contenedor de PayPal Button (oculto) -->
-        <div class="payment-form-content" id="paypal-form" style="display:none;">
-            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
-                After clicking "Complete order", you will be redirected to PayPal to complete your purchase securely.
-            </p>
-            <div id="paypal-button-container"></div>
-        </div>
+    </div>
+    <div class="payment-form-content" id="paypal-form" style="display:none;">
+    <div id="paypal-button-container"></div>
+    <input type="hidden" id="paypal-nonce">
     </div>
 
-    <!-- 🔥 LOADING SPINNER (cuando se procesa el pago) -->
-    <div id="payment-loading" style="display: none; text-align: center; padding: 20px;">
+    <div id="payment-loading" style="display:none;text-align:center;padding:20px;">
         <div class="spinner"></div>
-        <p style="margin-top: 15px; color: #666;">Processing payment...</p>
+        <p style="margin-top:15px;color:#666;">Processing payment...</p>
     </div>
 
-    <!-- 🔥 BOTONES DE NAVEGACIÓN -->
-    <div class="row-2" style="margin-top: 30px;">
-        <div class="col" style="display:flex; justify-content:space-between; align-items:center; flex-direction:row;">
-            <!-- Regresar -->
-            <a onclick="goToStep(2)" 
-               style="display:inline-flex; align-items:center; color:#555; font-size:14px; text-decoration:none; cursor:pointer;">
-                ← Return to shipping
-            </a>
-
-            <!-- Pagar -->
-            <button class="btn-next btn-black" 
+    <div class="row-2" style="margin-top:30px;">
+        <div class="col" style="display:flex;justify-content:space-between;align-items:center;">
+            <a onclick="goToStep(2)" style="cursor:pointer;color:#555;font-size:14px;">← Return to shipping</a>
+            <button class="btn-next btn-black"
                     id="btn-complete-order"
-                    style="border-radius:12px; padding:13px 30px;"
-                    onclick="openConfirmPagoModal()">
-                Complete order
-            </button>
+                    style="border-radius:12px;padding:13px 30px;"
+                    onclick="openConfirmPagoModal()">Complete order</button>
         </div>
     </div>
-<!-- ✅ CONFIRMACIÓN DE COMPRA -->
-<div id="orderSuccessBox"
-     style="display:none; margin-top:25px; padding:20px; border-radius:14px;
-            background:#f0fff4; border:1px solid #a7f3d0;">
-  <h3 style="margin:0 0 8px 0; color:#065f46;">
-    ✅ Compra completada con éxito
-  </h3>
-  <p style="margin:0; color:#065f46;">
-    Número de pedido: <strong id="orderNumberText"></strong>
-  </p>
+
+    <div id="orderSuccessBox"
+         style="display:none;margin-top:25px;padding:20px;border-radius:14px;background:#f0fff4;border:1px solid #a7f3d0;">
+        <h3 style="margin:0 0 8px 0;color:#065f46;">✅ Compra completada con éxito</h3>
+        <p style="margin:0;color:#065f46;">Número de pedido: <strong id="orderNumberText"></strong></p>
+    </div>
 </div>
 
-</div>
+<script>
+function toggleCardMode(mode){
+    document.getElementById('dummy-payment-info').style.display = (mode==='stripe')?'none':'block';
+    document.getElementById('stripe-payment-form').style.display = (mode==='stripe')?'block':'none';
+}
+</script>
+
+
 </div>
 
 <!-- DERECHA: RESUMEN -->
@@ -1253,10 +1257,22 @@ function selectPaymentMethod(method) {
         paypalRadio.checked = true;
         cardForm.style.display = 'none';
         paypalForm.style.display = 'block';
+        initPayPal(); // 🔥 ESTO ES LO QUE TE FALTABA
     }
 }
 
+  function toggleCardMode(mode) {
+    const dummyBox = document.getElementById('dummy-payment-info');
+    const stripeForm = document.getElementById('stripe-payment-form');
 
+    if (mode === 'stripe') {
+      dummyBox.style.display = 'none';
+      stripeForm.style.display = 'block';
+    } else {
+      dummyBox.style.display = 'block';
+      stripeForm.style.display = 'none';
+    }
+  }
 
 // 🔥 FUNCIÓN: Crear dirección en Saleor
 async function crearDireccionEnSaleor(shippingData) {
@@ -1306,90 +1322,125 @@ async function confirmarPagoAhora() {
 // 🔥 NUEVA FUNCIÓN: Procesar pago (llama al backend)
 async function procesarPago() {
     const btnCompleteOrder = document.getElementById('btn-complete-order');
-    
-    // Deshabilitar botón
+
     btnCompleteOrder.disabled = true;
     btnCompleteOrder.textContent = 'Processing...';
-    
+
     try {
-        // Obtener datos de localStorage
         const shippingData = JSON.parse(localStorage.getItem('checkout_shipping_data') || '{}');
-        
-        // Obtener total del carrito
+
         const totalElement = document.getElementById('checkout-total');
-        const totalText = totalElement.textContent.replace('$', '').trim();
-        const totalAmount = parseFloat(totalText) || 0;
-        
-        console.log('📦 Datos de envío:', shippingData);
+        const totalAmount = parseFloat(totalElement.textContent.replace('$','').trim()) || 0;
+
+        console.log('📦 Datos envío:', shippingData);
         console.log('💰 Total:', totalAmount);
-        
-        // Validar datos
-        if (!shippingData.city) {
-            showToast('⚠️ Por favor completa la dirección de envío', 'warning');
-            goToStep(2);
-            throw new Error('Missing shipping data');
+
+        if (!shippingData.city) throw showError("Falta la ciudad en la dirección de envío");
+        if (totalAmount <= 0) throw showError("Monto inválido");
+
+        // === MÉTODO DE PAGO ===
+        const selectedPayment = document.querySelector('input[name="payment_method"]:checked')?.value || "card";
+        let paymentMode = "dummy";
+        let stripePaymentMethodId = null;
+        let paypalNonce = null; // 🔥 NUEVO
+
+        if (selectedPayment === "card") {
+            const mode = document.querySelector('input[name="card_payment_mode"]:checked')?.value;
+            paymentMode = mode || "dummy";
+
+            if (paymentMode === "stripe") {
+
+                if (!stripe || !cardNumberElement) 
+                    throw showError("Stripe no está inicializado correctamente");
+
+                showToast("⏳ Generando método de pago Stripe...", "info");
+
+                const holder = document.getElementById("cardholder-name").value || 
+                               `${shippingData.first_name||""} ${shippingData.last_name||""}`.trim();
+
+                // ========= CREATE PAYMENT METHOD =========
+                const { error, paymentMethod } = await stripe.createPaymentMethod({
+                    type:"card",
+                    card:cardNumberElement,
+                    billing_details:{
+                        name:holder,
+                        email:shippingData.email || ""
+                    }
+                });
+
+                if (error) {
+                    console.error(error);
+                    showToast(`❌ ${error.message}`, "error");
+                    throw error;
+                }
+
+                console.log("🔥 PaymentMethod generado:", paymentMethod.id);
+                stripePaymentMethodId = paymentMethod.id;
+            }
         }
-        
-        if (totalAmount <= 0) {
-            showToast('⚠️ Error: Monto total inválido', 'error');
-            throw new Error('Invalid total amount');
+
+        // ==================================================
+        // 🟨 CASO 2: PAYPAL (Braintree)
+        // ==================================================
+        if (selectedPayment === "paypal") {
+
+            paymentMode = "paypal"; // 🔥 ESTO ES CLAVE
+            paypalNonce = document.getElementById("paypal-nonce")?.value;
+
+            if (!paypalNonce) {
+                throw showError("Debes autorizar PayPal antes de continuar");
+            }
+
+            console.log("🔥 PayPal nonce generado:", paypalNonce);
         }
-        
-        // 🔥 Llamar al backend
-        showToast('⏳ Procesando pago...', 'info');
-        
-        const response = await fetch('/catalogo/carrito/procesar-pago/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+
+
+        showToast("⏳ Procesando pago...", "info");
+
+        // ========= ENVIAR A DJANGO / SALEOR =========
+        const response = await fetch('/catalogo/carrito/procesar-pago/',{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCookie("csrftoken")
             },
-            body: JSON.stringify({
-                shipping_data: shippingData,
-                total_amount: totalAmount
+            body:JSON.stringify({
+                shipping_data:shippingData,
+                total_amount:totalAmount,
+                payment_mode:paymentMode,                  // 🔥 Dummy / Stripe
+                stripe_payment_method_id:stripePaymentMethodId, // 🔥 solo si Stripe
+                paypal_nonce: paypalNonce // 🔥 FALTABA
             })
         });
-        
+
         const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Error procesando pago');
-        }
-        
-        // ✅ ÉXITO
-        console.log('✅ Orden completada:', result);
-        showToast('✅ ¡Orden completada exitosamente!', 'success');
 
-        // 🧾 Mostrar confirmación en la misma página
+        if(!response.ok || !result.success)
+            throw showError(result.error||"Error procesando pago");
+
+        // ========= 💸 ÉXITO =========
+        showToast("✨ Compra completada con éxito","success");
+        console.log("ORDER:", result);
+
         document.getElementById("orderNumberText").textContent = result.order_number;
-        document.getElementById("orderSuccessBox").style.display = "block";
+        document.getElementById("orderSuccessBox").style.display="block";
 
-        // 🔒 Opcional: desactivar botón de pago
-        document.getElementById("btn-complete-order").disabled = true;
-        document.getElementById("btn-complete-order").textContent = "Pedido completado";
+        btnCompleteOrder.disabled = true;
+        btnCompleteOrder.textContent="Pedido completado";
+        document.querySelectorAll("input,select,textarea").forEach(e=>e.disabled=true);
 
-        // 🔒 Opcional: desactivar inputs
-        document.querySelectorAll("input, select, textarea").forEach(el => {
-            el.disabled = true;
-        });
+        localStorage.removeItem("checkout_shipping_data");
 
-        
-        // Limpiar datos
-        localStorage.removeItem('checkout_shipping_data');
-        
-        // Redirigir a página de confirmación
-        setTimeout(() => {
-            //window.location.href = `/order-confirmation/${result.order_number}/`;
-        }, 1500);
-        
-    } catch (error) {
-        console.error('❌ Error procesando pago:', error);
-        showToast(`❌ ${error.message}`, 'error');
-        
-        // Re-habilitar botón
-        btnCompleteOrder.disabled = false;
-        btnCompleteOrder.textContent = 'Complete order';
+    } catch(err){
+        console.error("❌ ERR",err);
+        btnCompleteOrder.disabled=false;
+        btnCompleteOrder.textContent="Complete order";
     }
+}
+
+function showError(msg){
+    showToast(msg,"error");
+    return new Error(msg);
 }
 
 // Función auxiliar para obtener CSRF token
@@ -1408,6 +1459,162 @@ function getCookie(name) {
     return cookieValue;
 }
 </script>
+
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+let stripe, elements, cardNumberElement, cardExpiryElement, cardCvcElement;
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    const STRIPE_KEY = "{{ STRIPE_PUBLIC_KEY }}";
+
+    if(!STRIPE_KEY){
+        console.error("❌ Stripe PUBLIC_KEY no encontrada.");
+        return;
+    }
+
+    stripe = Stripe(STRIPE_KEY);
+    elements = stripe.elements();
+
+    const style = {
+        base:{fontSize:"15px",color:"#333",'::placeholder':{color:"#a8a8a8"}},
+        invalid:{color:"#e63946"}
+    };
+
+    // 🔥 Creamos y guardamos en variables accesibles
+    cardNumberElement = elements.create("cardNumber",{style});
+    cardExpiryElement = elements.create("cardExpiry",{style});
+    cardCvcElement = elements.create("cardCvc",{style});
+
+    // Montamos dentro del form
+    cardNumberElement.mount("#card-number-element");
+    cardExpiryElement.mount("#card-expiry-element");
+    cardCvcElement.mount("#card-cvc-element");
+
+    console.log("✔ Stripe Elements Loaded");
+});
+
+
+// =======================================================
+// 🔥 FUNCIÓN para generar payment_method y enviarlo al back
+// =======================================================
+async function generarPaymentMethodStripe(){
+
+    const nombre = document.getElementById("cardholder-name")?.value || "";
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: "card",
+        card: cardNumberElement,
+        billing_details:{ name:nombre }
+    });
+
+    if(error){
+        document.getElementById("card-errors").innerText = error.message;
+        throw error;
+    }
+
+    return paymentMethod.id;  // <- Esto se envía al backend Django
+}
+</script>
+<!-- Braintree SDK -->
+<script src="https://js.braintreegateway.com/web/3.94.0/js/client.min.js"></script>
+<script src="https://js.braintreegateway.com/web/3.94.0/js/paypal-checkout.min.js"></script>
+<script>
+let paypalInstance = null;
+
+// Inicializar PayPal con Braintree
+async function initPayPal() {
+    try {
+        console.log("🔄 Iniciando PayPal con Braintree...");
+        
+        // 🔥 1. Pedir client token al backend
+        const res = await fetch("/catalogo/carrito/braintree-token/");
+        const data = await res.json();
+
+        if (!data.clientToken) {
+            throw new Error("No se recibió clientToken de Braintree");
+        }
+
+        console.log("✅ Client Token recibido:", data.clientToken.substring(0, 30) + "...");
+
+        // 🔥 2. Crear cliente Braintree
+        const clientInstance = await braintree.client.create({
+            authorization: data.clientToken
+        });
+
+        console.log("✅ Cliente Braintree creado");
+
+        // 🔥 3. Crear instancia PayPal Checkout
+        paypalInstance = await braintree.paypalCheckout.create({
+            client: clientInstance
+        });
+
+        console.log("✅ Instancia PayPal Checkout creada");
+
+        // 🔥 4. Cargar el SDK de PayPal dinámicamente
+        await paypalInstance.loadPayPalSDK({
+            currency: 'USD',
+            intent: 'capture',
+            vault: false
+        });
+
+        console.log("✅ SDK de PayPal cargado");
+
+        // 🔥 5. Renderizar botón PayPal
+        await paypal.Buttons({
+            fundingSource: paypal.FUNDING.PAYPAL,
+
+            createOrder: function() {
+                const total = document.getElementById("checkout-total")
+                    .textContent.replace("$", "").trim();
+                
+                console.log("💰 Creando orden PayPal por:", total, "USD");
+
+                return paypalInstance.createPayment({
+                    flow: 'checkout',
+                    amount: total,
+                    currency: 'USD',
+                    intent: 'capture'
+                });
+            },
+
+            onApprove: async function(data) {
+                try {
+                    console.log("✅ PayPal aprobado:", data);
+                    
+                    const payload = await paypalInstance.tokenizePayment(data);
+                    console.log("🔥 Nonce generado:", payload.nonce);
+                    
+                    document.getElementById("paypal-nonce").value = payload.nonce;
+                    showToast("✅ PayPal autorizado correctamente", "success");
+                } catch (err) {
+                    console.error("❌ Error tokenizando:", err);
+                    showToast("❌ Error al procesar PayPal", "error");
+                }
+            },
+
+            onError: function(err) {
+                console.error("❌ Error en PayPal:", err);
+                showToast("❌ " + (err.message || "Error al procesar PayPal"), "error");
+            },
+
+            onCancel: function() {
+                console.log("⚠️ Usuario canceló PayPal");
+                showToast("⚠️ Pago con PayPal cancelado", "warning");
+            }
+        }).render('#paypal-button-container');
+
+        console.log("✅ Botón PayPal renderizado correctamente");
+
+    } catch (err) {
+        console.error("❌ Error inicializando PayPal:", err);
+        showToast("❌ " + (err.message || "No se pudo inicializar PayPal"), "error");
+    }
+}
+</script>
+
+
 
 <div id="toast"></div>
 
@@ -1435,5 +1642,6 @@ function getCookie(name) {
     </div>
   </div>
 </div>
+
 
 {% endblock %}

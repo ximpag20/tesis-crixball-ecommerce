@@ -35,6 +35,10 @@ from .core.schedules import initiated_promotion_webhook_schedule
 from .graphql.executor import patch_executor
 from .graphql.promise import patch_promise
 from .patch_local import patch_local
+from pathlib import Path
+from dotenv import dotenv_values
+BASE_DIR = Path(__file__).resolve().parent.parent
+env = dotenv_values(os.path.join(BASE_DIR, ".env"))
 
 django_stubs_ext.monkeypatch()
 
@@ -1125,13 +1129,22 @@ ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL = False
 # ==============================================================================
 # PAYMENT GATEWAYS CONFIGURATION
 # ==============================================================================
+STRIPE_PUBLIC_KEY = env.get("STRIPE_PUBLIC_KEY")
+STRIPE_SECRET_KEY = env.get("STRIPE_SECRET_KEY")
+STRIPE_STORE_NAME = env.get("STRIPE_STORE_NAME", "Confecciones Textiles Crixball")
+
+BRAINTREE_PUBLIC_KEY = env.get("BRAINTREE_PUBLIC_KEY")
+BRAINTREE_PRIVATE_KEY = env.get("BRAINTREE_PRIVATE_KEY")
+BRAINTREE_MERCHANT_ID = env.get("BRAINTREE_MERCHANT_ID")
+BRAINTREE_USE_SANDBOX = (env.get("BRAINTREE_USE_SANDBOX", "true") or "true").lower() in ("true", "1")
+PAYPAL_CLIENT_ID = env.get("PAYPAL_CLIENT_ID")
 
 # Plugins de pago activos
 PLUGINS = [
     "saleor.plugins.webhook.plugin.WebhookPlugin",
     "saleor.payment.gateways.dummy.plugin.DeprecatedDummyGatewayPlugin",
-    
-    # "saleor.payment.gateways.stripe.plugin.StripeGatewayPlugin",  # TODO: Activar cuando tengas claves
+    "saleor.payment.gateways.stripe.plugin.StripeGatewayPlugin",  # TODO: Activar cuando tengas claves
+    "saleor.payment.gateways.braintree.plugin.DeprecatedBraintreeGatewayPlugin",
 ]
 
 # Configuración de gateways
@@ -1144,5 +1157,31 @@ PAYMENT_GATEWAYS = {
             "Supported currencies": "USD",
         },
     },
+        # 🔥 AGREGAR STRIPE AQUÍ
+    "saleor.payments.stripe": {
+        "module": "saleor.payment.gateways.stripe",
+        "config": {
+            "Automatic payment capture": True,
+            "Supported currencies": "USD",
+            "Secret key": STRIPE_SECRET_KEY,
+            "Publishable key": STRIPE_PUBLIC_KEY,
+            "Store customers card": False,
+        },
+    },
+        # ✅ NUEVO: BRAINTREE (PayPal)
+    "mirumee.payments.braintree": {
+        "module": "saleor.payment.gateways.braintree",
+        "config": {
+            "Public API key": BRAINTREE_PUBLIC_KEY,
+            "Secret API key": BRAINTREE_PRIVATE_KEY,
+            "Use sandbox": BRAINTREE_USE_SANDBOX,
+            "Merchant ID": BRAINTREE_MERCHANT_ID,
+            "Store customers card": False,
+            "Automatic payment capture": True,
+            "Require 3D secure": False,
+            "Supported currencies": "USD",
+        },
+    },
     
 }
+

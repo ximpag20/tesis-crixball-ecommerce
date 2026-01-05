@@ -14,7 +14,5 @@ urlpatterns = [
     path("carrito/checkout/", views.checkout_view, name="checkout"),
     path("carrito/actualizar-cantidad/", views.carrito_actualizar_cantidad, name="carrito_actualizar_cantidad"),
     path('carrito/procesar-pago/', views.procesar_pago_checkout, name='procesar_pago'),  # 🔥 NUEVO
-
-
-
+    path("carrito/braintree-token/", views.braintree_token, name="braintree_token"),
 ]

@@ -16,6 +16,8 @@ import json
 from .checkout_service import CheckoutService
 from django.views.decorators.http import require_http_methods
 
+from django.conf import settings
+
 #uso de decoradores
 @login_required
 def Catalogo(request):
@@ -483,7 +485,8 @@ def checkout_view(request):
     
     return render(request, "catalogo/checkout.html", {
         "carrito": carrito,
-        "datos_usuario": datos_usuario
+        "datos_usuario": datos_usuario,
+        "STRIPE_PUBLIC_KEY": settings.STRIPE_PUBLIC_KEY,
     })
 
 @login_required
@@ -559,6 +562,13 @@ def procesar_pago_checkout(request):
         shipping_data = data.get("shipping_data", {})
         shipping_cost = float(shipping_data.get("shipping_cost", 0) or 0)
         checkout_token = request.session.get("checkout_token")
+
+        # 🔥 NUEVO: modo de pago (dummy / stripe / paypal futuro)
+        payment_mode = data.get("payment_mode", "dummy")
+        stripe_payment_method_id = data.get("stripe_payment_method_id")
+
+        print(f"💳 Modo de pago seleccionado: {payment_mode}")
+        print(f"💳 Stripe payment_method_id: {stripe_payment_method_id}")
 
         print(f"\n{'='*60}")
         print("🚀 INICIANDO PROCESO DE PAGO")
@@ -748,9 +758,11 @@ def procesar_pago_checkout(request):
 
 
         # ================================================================
-        # PASO 3: Crear pago con Dummy
+        # PASO 3: Crear pago (Dummy o Stripe, según selección)
         # ================================================================
-        print("\n💳 PASO 3: Procesando pago con Dummy Gateway...")
+        print("\n💳 PASO 3: Procesando pago.")
+
+        paypal_nonce = data.get("paypal_nonce")  # ✅ NUEVO
 
         total_amount = float(data.get("total_amount", 0) or 0)
         if total_amount <= 0:
@@ -760,7 +772,82 @@ def procesar_pago_checkout(request):
                 "step": "payment"
             }, status=400)
 
-        payment_result = checkout_service.crear_pago_dummy(checkout_token, total_amount)
+        # 🔥 Elegir el gateway según el modo de pago
+        if payment_mode == "stripe":
+            print("💳 Usando Stripe como gateway.")
+            if not stripe_payment_method_id:
+                return JsonResponse({
+                    "success": False,
+                    "error": "Falta el payment_method_id de Stripe",
+                    "step": "payment"
+                }, status=400)
+
+            payment_result = checkout_service.crear_pago_stripe(
+                checkout_token=checkout_token,
+                total_amount=total_amount,
+                stripe_payment_method_id=stripe_payment_method_id,
+            )
+            
+        elif payment_mode == "paypal":
+            print("💳 Usando PayPal (Braintree) como gateway.")
+
+            if not paypal_nonce:
+                return JsonResponse({
+                    "success": False,
+                    "error": "Falta paypal_nonce para PayPal",
+                    "step": "payment"
+                }, status=400)
+
+            # 1️⃣ COBRAR EN BRAINTREE
+            from .braintree_service import BraintreeService
+            braintree_service = BraintreeService()
+
+            braintree_result = braintree_service.procesar_pago_paypal(
+                nonce=paypal_nonce,
+                amount=total_amount
+            )
+
+            if not braintree_result.get("success"):
+                return JsonResponse({
+                    "success": False,
+                    "error": braintree_result.get("error"),
+                    "step": "payment"
+                }, status=500)
+
+            transaction_id = braintree_result["transaction_id"]
+            print(f"✅ Pago PayPal confirmado en Braintree: {transaction_id}")
+
+            # 2️⃣ COMPLETAR ORDEN EN SALEOR (ESTO ES LO ÚNICO QUE SE NECESITA)
+            order_result = checkout_service.completar_orden_paypal(
+                checkout_token=checkout_token,
+                transaction_id=transaction_id,
+                amount=total_amount,
+                currency="USD"
+            )
+
+            if not order_result or not order_result.get("success"):
+                return JsonResponse({
+                    "success": False,
+                    "error": "No se pudo completar la orden PayPal en Saleor",
+                    "details": order_result.get("errors") if order_result else None,
+                    "step": "complete_order"
+                }, status=500)
+
+            payment_result = {
+                "success": True,
+                "gateway": "paypal",
+                "transaction_id": transaction_id
+            }
+
+
+        else:
+            # Por defecto mantenemos Dummy para pruebas
+            print("💳 Usando Dummy Gateway (modo prueba).")
+            payment_result = checkout_service.crear_pago_dummy(
+                checkout_token,
+                total_amount
+            )
+
         if not payment_result or not payment_result.get("success"):
             return JsonResponse({
                 "success": False,
@@ -768,18 +855,43 @@ def procesar_pago_checkout(request):
                 "step": "payment"
             }, status=500)
 
+
         # ================================================================
         # PASO 4: Completar orden + descontar stock REAL en Django
         # ================================================================
-        print("\n✅ PASO 4: Completando orden...")
+        print("\n✅ PASO 4: Completando orden.")
 
-        order_result = checkout_service.completar_orden(checkout_token)
+        # 🟢 IMPORTANTE: para Stripe usamos checkoutComplete con paymentData
+        if payment_mode == "stripe":
+            stripe_pi_id = payment_result.get("stripe_payment_intent")
+            if not stripe_pi_id:
+                return JsonResponse({
+                    "success": False,
+                    "error": "No se recibió el PaymentIntent de Stripe",
+                    "step": "complete_order"
+                }, status=500)
+
+            order_result = checkout_service.completar_orden_stripe(
+                checkout_token=checkout_token,
+                payment_intent_id=stripe_pi_id,
+                total_amount=total_amount
+            )
+        elif payment_mode == "paypal":
+            # ✅ YA se completó arriba con completar_orden_paypal()
+            # Aquí NO hacemos nada
+            order_result = None
+        
+        else:
+            # Dummy (y futuros métodos internos de Saleor)
+            order_result = checkout_service.completar_orden(checkout_token)
+
         if not order_result or not order_result.get("success"):
             return JsonResponse({
                 "success": False,
                 "error": "No se pudo completar la orden",
                 "step": "complete_order"
             }, status=500)
+
 
         # 🔥 Descontar stock REAL en Django (una sola vez) de forma segura
         # Nota: usamos el checkout_data que acabamos de obtener (ya ajustado).
@@ -807,23 +919,8 @@ def procesar_pago_checkout(request):
 
                 pt.save()
 
-        # ================================================================
-        # 🔥 PASO 5: Fulfillment automático (descuento stock en Saleor)
-        # ================================================================
-        saleor = SaleorAPIService()
 
-        order_id = order_result["order_id"]  # Base64
-        order_lines = saleor.obtener_lineas_orden(order_id)
 
-        lines_input = [
-            {
-                "orderLineId": line["id"],
-                "quantity": line["quantity"]
-            }
-            for line in order_lines
-        ]
-
-        saleor.crear_fulfillment(order_id, lines_input)
 
 
         # ================================================================
@@ -861,3 +958,28 @@ def procesar_pago_checkout(request):
             "error": f"Error interno: {str(e)}",
             "step": "exception"
         }, status=500)
+
+from .braintree_service import BraintreeService
+
+
+def braintree_token(request):
+    """Generar client token de Braintree para PayPal"""
+    try:
+        braintree_service = BraintreeService()
+        client_token = braintree_service.generar_client_token()
+        
+        if not client_token:
+            return JsonResponse(
+                {"error": "No se pudo generar el token de Braintree"},
+                status=500
+            )
+        
+        return JsonResponse({"clientToken": client_token})
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse(
+            {"error": f"Error al generar token: {str(e)}"},
+            status=500
+        )

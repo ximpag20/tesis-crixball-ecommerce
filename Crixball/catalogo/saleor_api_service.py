@@ -1,6 +1,7 @@
 import requests
 from typing import List, Dict, Optional
 from .saleor_auth_service import SaleorAuthService  # 🔥 NUEVO
+import base64
 
 class SaleorAPIService:
     """
@@ -80,10 +81,14 @@ class SaleorAPIService:
 
                     # 🔥 MOSTRAR ERRORES GRAPHQL (CLAVE)
                 if "errors" in data:
-                    print("❌ GraphQL errors:")
+                    print("\n❌❌ ERROR GRAPHQL DETECTADO EN checkoutPaymentCreate:")
                     for err in data["errors"]:
-                        print(err)
-                    return None
+                        print("🔻", err)
+                    print("📌 Variables enviadas:", variables)
+                    print("📌 Query ejecutada:", query[:200],"...")
+                    # 👇 devolvemos el error para poder leerlo
+                    return data  
+
                 if 'data' in data:
                     return data['data']
             
@@ -92,6 +97,31 @@ class SaleorAPIService:
         except Exception as e:
             print(f"❌ Error ejecutando query: {e}")
             return None
+        
+
+    def _ejecutar_mutation(self, mutation: str, variables: dict = None) -> Optional[dict]:
+        """Ejecuta mutaciones GraphQL en Saleor"""
+        payload = {"query": mutation}
+        if variables:
+            payload["variables"] = variables
+
+        token = self.auth_service.obtener_token_valido()
+
+        headers = {"Content-Type": "application/json","Authorization": f"Bearer {token}"}
+
+        try:
+            response = requests.post(self.api_url, json=payload, headers=headers, timeout=10)
+            data = response.json()
+
+            if "errors" in data:
+                print("❌ Error GraphQL MUTATION:", data["errors"])
+                return None
+
+            return data.get("data")
+        except Exception as e:
+            print("❌ Error ejecutando MUTATION:", e)
+            return None
+
     
     def obtener_productos(self, first: int = 100) -> List[Dict]:
         """
@@ -755,6 +785,9 @@ class SaleorAPIService:
 
         data = self._ejecutar_query(mutation, variables)
 
+        print("🔍 DEBUG fulfillment - respuesta completa de Saleor:")
+        print(data)
+
         if not data:
             return False
 
@@ -766,3 +799,256 @@ class SaleorAPIService:
         print("🚚 Fulfillment creado correctamente")
         return True
 
+    def crear_pago_saleor_stripe(self, checkout_id_base64, amount, currency="USD"):
+        """
+        Crea un Payment en Saleor para el checkout dado usando el gateway de Stripe.
+        Es análogo a crear el pago Dummy, pero usando 'saleor.payments.stripe'.
+        """
+        mutation = """
+        mutation CreateStripePayment($checkoutId: ID!, $input: PaymentInput!) {
+            checkoutPaymentCreate(
+                checkoutId: $checkoutId,
+                input: $input
+            ) {
+                payment {
+                    id
+                    chargeStatus
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+
+        variables = {
+            "checkoutId": checkout_id_base64,
+            "input": {
+                "gateway": "saleor.payments.stripe",  # 👈 ID del gateway que te sale en manager.list_payment_gateways
+                "amount": float(amount),
+                # Este token es solo una marca para que Saleor sepa que viene de Stripe externo.
+                # No es el PaymentIntent de Stripe, ese va en paymentData.
+                "token": "stripe-external-payment"
+            },
+        }
+
+        print("\n🔍 DEBUG checkoutPaymentCreate (Stripe) – variables que se envían a Saleor:")
+        print(variables)
+
+        result = self._ejecutar_query(mutation, variables)
+        print("🟢 Resultado checkoutPaymentCreate (Stripe):", result)
+        return result
+
+    # ============================================================
+    # 🧬 Convertir UUID de Checkout a ID Base64 (requerido por Saleor)
+    # ============================================================
+    
+
+    def _convertir_uuid_a_id_base64(self, token, tipo):
+        """
+        Convierte un UUID a ID Base64 estilo Relay que Saleor exige para mutaciones.
+        tipo puede ser: "Checkout", "Order", "ProductVariant", etc.
+        """
+        raw_string = f"{tipo}:{token}"
+        return base64.b64encode(raw_string.encode("utf-8")).decode("utf-8")
+
+
+    # ================================================
+    # 🔥 checkoutComplete con paymentData para Stripe
+    # ================================================
+    def completar_checkout_stripe_paymentData(self, checkout_token, payment_intent_id, amount):
+        import json
+
+        # Convertimos UUID → Base64
+        checkout_id_base64 = self._convertir_uuid_a_id_base64(checkout_token, "Checkout")
+
+        mutation = """
+        mutation CompleteCheckout($id: ID!, $paymentData: JSONString!) {
+            checkoutComplete(
+                checkoutId: $id,
+                paymentData: $paymentData
+            ) {
+                order {
+                    id
+                    number
+                    status
+                    total {
+                        gross {
+                            amount
+                            currency
+                        }
+                    }
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+
+        # ⚠️ JSONString → debe ser string, no diccionario
+        payment_data_string = json.dumps({
+            "id": payment_intent_id,
+            "kind": "EXTERNAL",
+            "status": "SUCCESS",
+            "amount": float(amount),
+            "currency": "USD",
+        })
+
+        variables = {
+            "id": checkout_id_base64,
+            "paymentData": payment_data_string,
+        }
+
+        print("\n🚀 Enviando checkoutComplete con paymentData a Saleor...")
+        print("🔐 checkoutId:", checkout_id_base64)
+        print("🧾 paymentData:", payment_data_string)
+
+        result = self._ejecutar_query(mutation, variables)
+        print("📌 Respuesta checkoutComplete Stripe:", result)
+
+        if not result or "checkoutComplete" not in result:
+            return {"success": False, "error": "checkoutComplete falló (respuesta vacía)"}
+
+        data = result["checkoutComplete"]
+
+        if data.get("errors"):
+            print("❌ Errores:", data["errors"])
+            return {"success": False, "errors": data["errors"]}
+
+        if not data.get("order"):
+            print("⚠️ Saleor no generó orden (order=null)")
+            return {"success": False, "error": "No se generó orden"}
+
+        order = data["order"]
+
+        return {
+            "success": True,
+            "order_id": order["id"],
+            "order_number": order["number"],
+            "status": order["status"],
+            "total": order["total"]["gross"]["amount"],
+            "currency": order["total"]["gross"]["currency"],
+        }
+
+
+    # ============================================================
+    # 🔥 Capturar el pago en Saleor para que checkoutComplete genere la ORDER
+    # ============================================================
+    def capturar_pago_stripe(self, payment_id):
+        mutation = """
+        mutation CaptureStripe($paymentId: ID!) {
+            paymentCapture(paymentId: $paymentId) {
+                payment {
+                    id
+                    chargeStatus
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+        variables = { "paymentId": payment_id }
+        result = self._ejecutar_query(mutation, variables)
+        print("💳 Captura Stripe en Saleor:", result)
+        return result
+
+    def registrar_transaccion_stripe(self, checkout_id_base64, amount):
+        mutation = """
+        mutation TxStripe($id: ID!, $amount: MoneyInput!) {
+        transactionCreate(
+            id: $id,
+            transaction: {
+            amountCharged: $amount,
+            message: "Pago confirmado Stripe"
+            }
+        ) {
+            transaction {
+            id
+            createdAt
+            }
+            errors {
+            field
+            message
+            code
+            }
+        }
+        }
+        """
+
+        variables = {
+            "id": checkout_id_base64,      # <<< AHORA SI el ID correcto
+            "amount": {
+                "amount": float(amount),
+                "currency": "USD"
+            }
+        }
+
+        print("💳 Registrando transacción CAPTURE SUCCESS bajo Checkout...")
+        result = self._ejecutar_mutation(mutation, variables)
+        print("🧾 transactionCreate RESULT:", result)
+
+        return result
+
+
+    def marcar_transaccion_como_exitosa(self, transaction_id):
+        mutation = """
+        mutation TxEvent($id: ID!) {
+        transactionEventReport(
+            id: $id,
+            event: {
+            type: CHARGE_SUCCESS,
+            message: "Stripe confirmó el pago con éxito"
+            }
+        ) {
+            transaction {
+            id
+            }
+            errors {
+            message
+            code
+            }
+        }
+        }"""
+
+        return self._ejecutar_mutation(mutation, {"id": transaction_id})
+
+
+    def obtener_braintree_client_token(self):
+        query = """
+        query GetBraintreeClientToken {
+        shop {
+            availablePaymentGateways {
+            id
+            config {
+                field
+                value
+            }
+            }
+        }
+        }
+        """
+
+        result = self._ejecutar_query(query)
+
+        if not result:
+            print("❌ No hubo respuesta de Saleor")
+            return None
+
+        gateways = result.get("shop", {}).get("availablePaymentGateways", [])
+
+        for gateway in gateways:
+            if gateway.get("id") == "mirumee.payments.braintree":
+                for cfg in gateway.get("config", []):
+                    if cfg.get("field") == "client_token":
+                        return cfg.get("value")
+
+        print("❌ client_token no encontrado en Braintree")
+        return None

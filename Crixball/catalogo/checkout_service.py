@@ -6,6 +6,8 @@ import base64  # 🔥 Agregar al inicio del archivo
 from typing import Optional, Dict
 from .saleor_auth_service import SaleorAuthService
 from .saleor_api_service import SaleorAPIService
+from django.conf import settings
+import json
 
 class CheckoutService:
     """
@@ -550,6 +552,138 @@ class CheckoutService:
         
         return None
     
+    
+    # ========================================================================
+    # 🔥 PASO 3 (alternativo): CREAR PAGO CON STRIPE (externo)
+    # ========================================================================
+
+    def crear_pago_stripe(
+        self,
+        checkout_token: str,
+        total_amount: float,
+        stripe_payment_method_id: str
+    ) -> Optional[Dict]:
+        """
+        Crea un pago usando Stripe directamente (PaymentIntent)
+        y devuelve el ID del PaymentIntent para que después
+        checkoutComplete (con paymentData) marque la orden como pagada.
+
+        👉 OJO: aquí ya NO se llama a paymentCapture en Saleor.
+        """
+        import stripe
+
+        # 🔥 Usa tu clave desde settings (NO hardcode)
+        stripe.api_key = settings.STRIPE_SECRET_KEY  # <-- aquí tu .env
+
+        # (Solo por logging, no lo necesitamos para el pago)
+        checkout_id_base64 = self._convertir_uuid_a_id_base64(checkout_token, "Checkout")
+
+        # 🔥 PASO 1: Crear PaymentIntent en Stripe directamente
+        try:
+            print(f"💳 [Stripe] Creando PaymentIntent en Stripe...")
+            print(f"   Monto: ${total_amount}")
+            print(f"   Payment Method: {stripe_payment_method_id}")
+
+            payment_intent = stripe.PaymentIntent.create(
+                amount=int(total_amount * 100),  # Stripe usa centavos
+                currency="usd",
+                payment_method=stripe_payment_method_id,
+                confirm=True,  # 🔥 Confirmar automáticamente
+                automatic_payment_methods={
+                    'enabled': True,
+                    'allow_redirects': 'never'
+                }
+            )
+
+            print(f"✅ [Stripe] PaymentIntent creado: {payment_intent.id}")
+            print(f"   Status: {payment_intent.status}")
+
+            if payment_intent.status != 'succeeded':
+                print(f"❌ [Stripe] Pago no exitoso: {payment_intent.status}")
+                return None
+
+        except stripe.error.CardError as e:
+            print(f"❌ [Stripe] Error con la tarjeta: {e.user_message}")
+            return None
+        except Exception as e:
+            print(f"❌ [Stripe] Error procesando pago: {str(e)}")
+            return None
+
+        # 🔥 En este modo, NO registramos el pago extra en Saleor con checkoutPaymentCreate,
+        # porque vamos a usar paymentData en checkoutComplete.
+        # Saleor tratará este pago como externo (Stripe) ya capturado.
+
+        return {
+            "success": True,
+            "stripe_payment_intent": payment_intent.id,
+            "status": payment_intent.status,
+        }
+
+    
+    # ========================================================================
+    # 🔥 PASO 3.5: CAPTURAR PAGO DE STRIPE
+    # ========================================================================
+
+    def capturar_pago_stripe(self, payment_id: str) -> bool:
+        """
+        Captura el pago de Stripe después de crearlo
+        """
+        mutation = """
+        mutation CapturePayment($paymentId: ID!) {
+            paymentCapture(paymentId: $paymentId) {
+                payment {
+                    id
+                    chargeStatus
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+        
+        variables = {
+            "paymentId": payment_id
+        }
+        
+        print(f"💳 [Stripe] Capturando pago {payment_id}...")
+        
+        data = self._ejecutar_mutation(mutation, variables)
+
+        data = self._ejecutar_mutation(mutation, variables)
+
+        # 🔥 AGREGAR ESTAS LÍNEAS EXACTAMENTE AQUÍ:
+        print(f"🔍 DEBUG - Respuesta RAW de completar orden:")
+        print(f"   Type: {type(data)}")
+        print(f"   Value: {data}")
+        if data:
+            print(f"   Keys: {data.keys() if isinstance(data, dict) else 'N/A'}")
+        # 🔥 FIN DE LAS LÍNEAS A AGREGAR
+
+        if not data or not data.get('checkoutComplete'):
+            print(f"❌ Error: No se pudo completar la orden")
+            return None
+        
+        if not data or not data.get('paymentCapture'):
+            print(f"❌ [Stripe] No se pudo capturar el pago")
+            return False
+        
+        result = data['paymentCapture']
+        
+        if result.get('errors'):
+            print(f"❌ [Stripe] Errores al capturar: {result['errors']}")
+            return False
+        
+        if result.get('payment'):
+            payment = result['payment']
+            print(f"✅ [Stripe] Pago capturado!")
+            print(f"   Nuevo status: {payment['chargeStatus']}")
+            return True
+        
+        return False
+    
     # ========================================================================
     # 🔥 PASO 4: COMPLETAR ORDEN
     # ========================================================================
@@ -1080,5 +1214,204 @@ class CheckoutService:
             return False
 
         return True
+
+    def completar_orden_stripe(self, checkout_token, payment_intent_id, total_amount):
+        import json
+        from .saleor_api_service import SaleorAPIService
+
+        print("✅ PASO 4: Completando orden.\n")
+        print("==========================================================")
+        print("💳 [Stripe] Procesando finalización de compra")
+        print("==========================================================\n")
+
+        print(f"🔐 Checkout token: {checkout_token}")
+
+        saleor = SaleorAPIService()
+
+        # 1️⃣ Convertir checkout UUID a Base64 para Saleor
+        checkout_id_base64 = self._convertir_uuid_a_id_base64(checkout_token, "Checkout")
+        print(f"🧬 checkoutId Base64: {checkout_id_base64}")
+
+        # 2️⃣ Crear Payment Interno en Saleor
+        print("🟢 Registrando pago interno en Saleor...")
+        payment_result = saleor.crear_pago_saleor_stripe(
+            checkout_id_base64=checkout_id_base64,
+            amount=float(total_amount)
+        )
+        print("🟢 Resultado checkoutPaymentCreate:", payment_result)
+
+        if not payment_result or payment_result.get("checkoutPaymentCreate", {}).get("errors"):
+            print("❌ Saleor no creó el Payment.")
+            return None
+
+        payment_id = payment_result["checkoutPaymentCreate"]["payment"]["id"]
+
+        # 3️⃣ Registrar transacción CAPTURE SUCCESS (esto es CLAVE)
+        print("💳 Registrando transacción como pagada en Saleor...")
+        tx = saleor.registrar_transaccion_stripe(checkout_id_base64, total_amount)
+
+        print("🧾 resultado transactionCreate:", tx)
+
+        
+        if not tx or tx.get("transactionCreate", {}).get("errors"):
+            print("❌ Error creando transacción.")
+            return None
+
+        transaction_id = tx["transactionCreate"]["transaction"]["id"]
+        print("⚡ Transacción creada:", transaction_id)
+        # 4️⃣ Ejecutar checkoutComplete con paymentData externo
+        payment_data = {
+            "id": payment_intent_id,
+            "kind": "EXTERNAL",
+            "status": "SUCCESS",
+            "amount": float(total_amount),
+            "currency": "USD"
+        }
+
+        print("\n🚀 Enviando checkoutComplete con paymentData a Saleor...")
+        print(json.dumps(payment_data))
+
+        # 🔥 Ahora sí ejecutamos checkoutComplete
+        complete_result = saleor.completar_checkout_stripe_paymentData(
+            checkout_token=checkout_token,
+            payment_intent_id=payment_intent_id,
+            amount=float(total_amount),
+        )
+
+        print("📌 Resultado checkoutComplete Stripe:", complete_result)
+
+        if not complete_result or not complete_result.get("success"):
+            print("❌ Error completando el checkout en Saleor:", complete_result)
+            return None
+
+        print("🎉 ORDEN GENERADA EXITOSAMENTE ✔")
+        return complete_result
+
+
+
+    # ==========================================================
+    # 🔥 REGISTRAR EL PAGO STRIPE DENTRO DE SALEOR (OBLIGATORIO)
+    # ==========================================================
+
+    def crear_pago_saleor_stripe(self, checkout_token, amount):
+        """
+        Crear el registro del pago en Saleor usando Stripe.
+        Esto NO cobra, solo registra el pago para poder usar paymentData.
+        """
+
+        checkout_id_base64 = self._convertir_uuid_a_id_base64(checkout_token, "Checkout")
+
+        mutation = """
+        mutation CreatePaymentStripe($checkoutId: ID!, $input: PaymentInput!) {
+            checkoutPaymentCreate(
+                checkoutId: $checkoutId,
+                input: $input
+            ) {
+                payment {
+                    id
+                    gateway
+                    chargeStatus
+                    total {
+                        amount
+                        currency
+                    }
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+
+        variables = {
+            "checkoutId": checkout_id_base64,
+            "input": {
+                "gateway": "saleor.payments.stripe",   # <--- tu gateway detectado correctamente
+                "amount": float(amount),
+                "token": "stripe-external-payment",   # no importa el token, solo registro
+            }
+        }
+
+        print("💳 Ejecutando checkoutPaymentCreate para Stripe...")
+        data = self._ejecutar_mutation(mutation, variables)
+
+        if not data or not data.get("checkoutPaymentCreate"):
+            print("❌ No se pudo crear el pago Stripe en Saleor")
+            return None
+
+        result = data["checkoutPaymentCreate"]
+
+        if result.get("errors"):
+            print("❌ Error Stripe interno:", result["errors"])
+            return None
+
+        print("🟢 Pago Stripe registrado internamente:", result["payment"])
+        return result["payment"]
+
+
+    def completar_orden_paypal(self, checkout_token, transaction_id, amount, currency="USD"):
+        import json
+
+        mutation = """
+        mutation CheckoutComplete($checkoutId: ID!, $paymentData: JSONString!) {
+            checkoutComplete(
+                id: $checkoutId
+                paymentData: $paymentData
+            ) {
+                order { id number status }
+                confirmationNeeded
+                errors { field message code }
+            }
+        }
+        """
+
+        checkout_id_base64 = self._convertir_uuid_a_id_base64(checkout_token, "Checkout")
+
+        payment_data_string = json.dumps({
+            "id": transaction_id,
+            "kind": "EXTERNAL",
+            "status": "SUCCESS",
+            "amount": float(amount),
+            "currency": currency
+        }, ensure_ascii=False)
+
+        variables = {
+            "checkoutId": checkout_id_base64,
+            "paymentData": payment_data_string
+        }
+
+        print("🚀 Completando orden PayPal en Saleor")
+        print("🧾 paymentData:", payment_data_string)
+
+        data = self._ejecutar_mutation(mutation, variables)
+
+        if not data or not data.get("checkoutComplete"):
+            return {"success": False, "error": "checkoutComplete falló (respuesta vacía)"}
+
+        result = data["checkoutComplete"]
+
+        if result.get("errors"):
+            return {"success": False, "errors": result["errors"]}
+
+        # ✅ Si viene order, excelente
+        if result.get("order"):
+            order = result["order"]
+            return {
+                "success": True,
+                "order_id": order["id"],
+                "order_number": order["number"],
+                "status": order["status"],
+            }
+
+        # ✅ Si order viene null pero NO hay errors, asumimos que completó
+        return {
+            "success": True,
+            "order_id": None,
+            "order_number": None,
+            "status": "COMPLETED",
+            "note": "checkoutComplete no devolvió order pero tampoco errores"
+        }
 
 
