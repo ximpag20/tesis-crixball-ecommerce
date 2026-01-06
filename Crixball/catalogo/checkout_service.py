@@ -20,18 +20,38 @@ class CheckoutService:
         self.last_errors = []
         self.saleor = SaleorAPIService()
     
-    def _ejecutar_mutation(self, mutation: str, variables: dict = None) -> Optional[dict]:
-        """Ejecuta una mutation GraphQL en Saleor"""
-        payload = {"query": mutation}
-        if variables:
-            payload["variables"] = variables
-        
+    def _ejecutar_mutation(self, mutation: str, variables: dict = None):
+        """
+        Ejecuta una mutation GraphQL en Saleor
+        (VERSIÓN DEBUG: muestra request y response completos)
+        """
+        import json
+        import requests
+
+        payload = {
+            "query": mutation,
+            "variables": variables or {}
+        }
+
         token = self.auth_service.obtener_token_valido()
+
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}"
         }
-        
+
+        # =======================
+        # 🔍 DEBUG REQUEST
+        # =======================
+        print("\n================ SALEOR MUTATION =================")
+        print("🧾 MUTATION:")
+        print(mutation)
+        print("\n📦 VARIABLES:")
+        print(json.dumps(payload["variables"], indent=2))
+        print("\n🔑 TOKEN (primeros 40 chars):")
+        print(token[:40] + "...")
+        print("=================================================\n")
+
         try:
             response = requests.post(
                 self.api_url,
@@ -39,25 +59,48 @@ class CheckoutService:
                 headers=headers,
                 timeout=30
             )
-            
-            if response.status_code == 200:
+
+            # =======================
+            # 🔍 DEBUG RESPONSE
+            # =======================
+            print("\n================ SALEOR RESPONSE =================")
+            print("📡 STATUS CODE:", response.status_code)
+            print("📡 RAW TEXT:")
+            print(response.text)
+            print("=================================================\n")
+
+            try:
                 data = response.json()
-                
-                if 'errors' in data:
-                    print(f"❌ GraphQL Errors: {data['errors']}")
-                    return None
-                
-                if 'data' in data:
-                    return data['data']
-            
-            print(f"❌ HTTP Error {response.status_code}: {response.text}")
+            except Exception as e:
+                print("❌ ERROR parseando JSON de Saleor:", e)
+                return None
+
+            # 🔥 GraphQL errors (nivel API)
+            if "errors" in data:
+                print("\n❌❌❌ GRAPHQL ERRORS (nivel API):")
+                for err in data["errors"]:
+                    print(json.dumps(err, indent=2))
+                return data  # ⬅️ NO ocultar el error
+
+            # 🔥 Mutations con errors internos
+            if "data" in data:
+                for key, value in data["data"].items():
+                    if isinstance(value, dict) and value.get("errors"):
+                        print("\n❌❌❌ MUTATION ERRORS (nivel negocio):")
+                        for err in value["errors"]:
+                            print(json.dumps(err, indent=2))
+
+                return data["data"]
+
+            print("❌ Respuesta inesperada de Saleor:", data)
             return None
-            
+
         except Exception as e:
-            print(f"❌ Error ejecutando mutation: {e}")
+            print("❌ EXCEPCIÓN ejecutando mutation:", str(e))
             import traceback
             traceback.print_exc()
             return None
+
     
     # ========================================================================
     # 🔥 PASO 1: CREAR DIRECCIÓN EN SALEOR
@@ -1357,7 +1400,7 @@ class CheckoutService:
         mutation = """
         mutation CheckoutComplete($checkoutId: ID!, $paymentData: JSONString!) {
             checkoutComplete(
-                id: $checkoutId
+                checkoutId: $checkoutId
                 paymentData: $paymentData
             ) {
                 order { id number status }
@@ -1385,7 +1428,19 @@ class CheckoutService:
         print("🚀 Completando orden PayPal en Saleor")
         print("🧾 paymentData:", payment_data_string)
 
+        print("\n🚨 DEBUG CHECKOUT COMPLETE PAYPAL")
+        print("Checkout token:", checkout_token)
+        print("Checkout ID Base64:", checkout_id_base64)
+        print("PaymentData JSON:", payment_data_string)
+        print("=================================\n")
+
+
         data = self._ejecutar_mutation(mutation, variables)
+
+        print("\n🧠 RESULTADO COMPLETO checkoutComplete")
+        print(type(data))
+        print(json.dumps(data, indent=2) if isinstance(data, dict) else data)
+        print("=================================\n")
 
         if not data or not data.get("checkoutComplete"):
             return {"success": False, "error": "checkoutComplete falló (respuesta vacía)"}
@@ -1415,3 +1470,132 @@ class CheckoutService:
         }
 
 
+    def crear_pago_external(self, checkout_token, amount, gateway="mirumee.payments.braintree"):
+        checkout_id_base64 = self._convertir_uuid_a_id_base64(checkout_token, "Checkout")
+
+        mutation = """
+        mutation CreateExternalPayment($checkoutId: ID!, $input: PaymentInput!) {
+            checkoutPaymentCreate(
+                checkoutId: $checkoutId
+                input: $input
+            ) {
+                payment {
+                    id
+                    chargeStatus
+                    isActive
+                    gateway
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+
+        variables = {
+            "checkoutId": checkout_id_base64,
+            "input": {
+                "gateway": gateway,          # 👈 EXTERNAL / dummy / stripe
+                "amount": float(amount),
+                "token": "external-payment"  # 👈 requerido aunque sea externo
+            }
+        }
+
+        print("💳 Creando pago EXTERNAL en Saleor")
+
+        data = self._ejecutar_mutation(mutation, variables)
+
+        if not data or not data.get("checkoutPaymentCreate"):
+            return {"success": False, "error": "No se pudo crear el pago externo"}
+
+        result = data["checkoutPaymentCreate"]
+
+        if result.get("errors"):
+            return {"success": False, "errors": result["errors"]}
+
+        payment = result["payment"]
+        print("✅ Pago EXTERNAL creado en Saleor:", payment["id"])
+
+        return {
+            "success": True,
+            "payment_id": payment["id"],
+            "status": payment["chargeStatus"]
+        }
+
+    def procesar_pago_saleor(self, checkout_token, payment_id):
+        mutation = """
+        mutation ProcessPayment($paymentId: ID!) {
+            paymentProcess(id: $paymentId) {
+                payment {
+                    id
+                    chargeStatus
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+
+        variables = {
+            "paymentId": payment_id
+        }
+
+        print("⚡ Procesando pago en Saleor")
+
+        data = self._ejecutar_mutation(mutation, variables)
+
+        if not data or not data.get("paymentProcess"):
+            return {"success": False, "error": "paymentProcess falló"}
+
+        result = data["paymentProcess"]
+
+        if result.get("errors"):
+            return {"success": False, "errors": result["errors"]}
+
+        print("✅ Pago procesado en Saleor:", result["payment"]["chargeStatus"])
+        return {"success": True}
+
+
+    def procesar_transaccion_saleor(self, payment_id):
+        mutation = """
+        mutation TransactionProcess($id: ID!) {
+            transactionProcess(id: $id) {
+                transaction {
+                    id
+                    status
+                    error
+                }
+                errors {
+                    field
+                    message
+                    code
+                }
+            }
+        }
+        """
+
+        variables = {
+            "id": payment_id
+        }
+
+        print("⚡ Procesando transacción en Saleor (transactionProcess)")
+
+        data = self._ejecutar_mutation(mutation, variables)
+
+        if not data or not data.get("transactionProcess"):
+            return {"success": False, "error": "transactionProcess falló"}
+
+        result = data["transactionProcess"]
+
+        if result.get("errors"):
+            return {"success": False, "errors": result["errors"]}
+
+        tx = result.get("transaction")
+        print("✅ Transacción procesada en Saleor:", tx)
+
+        return {"success": True, "transaction": tx}

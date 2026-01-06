@@ -798,7 +798,7 @@ def procesar_pago_checkout(request):
                     "step": "payment"
                 }, status=400)
 
-            # 1️⃣ COBRAR EN BRAINTREE
+            # 1️⃣ COBRAR EN BRAINTREE (EXTERNO)
             from .braintree_service import BraintreeService
             braintree_service = BraintreeService()
 
@@ -817,7 +817,7 @@ def procesar_pago_checkout(request):
             transaction_id = braintree_result["transaction_id"]
             print(f"✅ Pago PayPal confirmado en Braintree: {transaction_id}")
 
-            # 2️⃣ COMPLETAR ORDEN EN SALEOR (ESTO ES LO ÚNICO QUE SE NECESITA)
+            # 2️⃣ COMPLETAR CHECKOUT EN SALEOR (ÚNICO PASO NECESARIO)
             order_result = checkout_service.completar_orden_paypal(
                 checkout_token=checkout_token,
                 transaction_id=transaction_id,
@@ -879,7 +879,7 @@ def procesar_pago_checkout(request):
         elif payment_mode == "paypal":
             # ✅ YA se completó arriba con completar_orden_paypal()
             # Aquí NO hacemos nada
-            order_result = None
+            pass
         
         else:
             # Dummy (y futuros métodos internos de Saleor)

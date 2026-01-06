@@ -45,7 +45,8 @@ class BraintreeService:
                 return {
                     'success': True,
                     'transaction_id': result.transaction.id,
-                    'amount': result.transaction.amount
+                    'amount': result.transaction.amount,
+                    'currency': 'USD'
                 }
             else:
                 print(f"❌ Error en pago: {result.message}")
