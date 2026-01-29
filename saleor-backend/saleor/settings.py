@@ -1125,6 +1125,8 @@ patch_local()
 
 # 🔥 DESACTIVAR CONFIRMACIÓN DE EMAIL PARA REGISTRO
 ENABLE_ACCOUNT_CONFIRMATION_BY_EMAIL = False
+ACCOUNT_CONFIRMATION_REQUIRED=False
+
 
 # ==============================================================================
 # PAYMENT GATEWAYS CONFIGURATION

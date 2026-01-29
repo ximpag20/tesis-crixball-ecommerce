@@ -9,14 +9,30 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 import json
 
+from django.utils import timezone
+from django.utils import timezone
+from decimal import Decimal
+
+from .models import Comprobante
+from registro.models import Usuario
+
 from .saleor_user_service import SaleorUserService
 from .saleor_api_service import SaleorAPIService
 import json
-
+from registro.models import Usuario
 from .checkout_service import CheckoutService
 from django.views.decorators.http import require_http_methods
 
 from django.conf import settings
+
+from django.contrib import messages
+from django.http import HttpResponse
+from django.template.loader import get_template
+
+from xhtml2pdf import pisa
+
+from django.conf import settings
+import os
 
 #uso de decoradores
 @login_required
@@ -817,7 +833,85 @@ def procesar_pago_checkout(request):
             transaction_id = braintree_result["transaction_id"]
             print(f"✅ Pago PayPal confirmado en Braintree: {transaction_id}")
 
-            # 2️⃣ COMPLETAR CHECKOUT EN SALEOR (ÚNICO PASO NECESARIO)
+            # 2️⃣ REGISTRAR PAGO EXTERNAL EN SALEOR (esto evita CHECKOUT_NOT_FULLY_PAID)
+            #    OJO: en tu checkout_service YA existe este helper
+            external_payment = checkout_service.crear_pago_external(
+                checkout_token=checkout_token,
+                amount=total_amount,
+                gateway="mirumee.payments.braintree"
+            )
+
+            if not external_payment or not external_payment.get("success"):
+                return JsonResponse({
+                    "success": False,
+                    "error": "No se pudo registrar el pago externo en Saleor",
+                    "details": external_payment,
+                    "step": "saleor_create_external_payment"
+                }, status=500)
+
+            # 3️⃣ REGISTRAR TRANSACCIÓN “COBRADA” EN SALEOR (transactionCreate + CHARGE_SUCCESS)
+            #    (reusamos tus funciones existentes en SaleorAPIService)
+            tx_create = saleor.registrar_transaccion_stripe(checkout_id, total_amount)  # sí, el nombre dice stripe, pero sirve igual
+            if not tx_create or not tx_create.get("transactionCreate") or tx_create["transactionCreate"].get("errors"):
+                return JsonResponse({
+                    "success": False,
+                    "error": "No se pudo crear la transacción en Saleor",
+                    "details": tx_create,
+                    "step": "saleor_transaction_create"
+                }, status=500)
+
+            saleor_tx_id = tx_create["transactionCreate"]["transaction"]["id"]
+
+            import traceback
+
+            try:
+                print("\n🧪 DEBUG PAYPAL: marcando transacción exitosa en Saleor")
+                print("   ➤ saleor_tx_id:", saleor_tx_id)
+                print("   ➤ psp_reference (PayPal):", transaction_id)
+
+                tx_event = saleor.marcar_transaccion_paypal_exitosa(
+                    saleor_tx_id,
+                    transaction_id,
+                    total_amount
+                )
+
+
+                print("🧪 DEBUG tx_event RAW:", tx_event)
+
+                if not tx_event:
+                    raise ValueError("tx_event es None (mutación no devolvió data)")
+
+                if "transactionEventReport" not in tx_event:
+                    raise KeyError(f"transactionEventReport no está en tx_event: {tx_event}")
+
+                errors = tx_event["transactionEventReport"].get("errors")
+                if errors:
+                    raise ValueError(f"Errores en transactionEventReport: {errors}")
+
+                print("✅ transactionEventReport ejecutado correctamente")
+
+            except Exception as e:
+                print("\n❌❌❌ ERROR DETECTADO EN PAYPAL TRANSACTION EVENT")
+                print("📍 Paso: saleor_transaction_event")
+                print("📍 Tipo:", type(e).__name__)
+                print("📍 Mensaje:", str(e))
+                print("📍 Traceback completo:")
+                traceback.print_exc()
+
+                return JsonResponse({
+                    "success": False,
+                    "error": "Error marcando transacción PayPal en Saleor",
+                    "exception_type": type(e).__name__,
+                    "exception_message": str(e),
+                    "step": "saleor_transaction_event"
+                }, status=500)
+
+            print("\n🧪 DEBUG: llegando a completar_orden_paypal")
+            print("   ➤ checkout_token:", checkout_token)
+            print("   ➤ total_amount:", total_amount)
+            print("   ➤ transaction_id (PayPal):", transaction_id)
+
+            # 4️⃣ AHORA SÍ: COMPLETAR CHECKOUT
             order_result = checkout_service.completar_orden_paypal(
                 checkout_token=checkout_token,
                 transaction_id=transaction_id,
@@ -838,6 +932,7 @@ def procesar_pago_checkout(request):
                 "gateway": "paypal",
                 "transaction_id": transaction_id
             }
+
 
 
         else:
@@ -892,6 +987,69 @@ def procesar_pago_checkout(request):
                 "step": "complete_order"
             }, status=500)
 
+        # ================================================================
+        # ✅ AQUÍ VA EL JSON DEL COMPROBANTE (JUSTO DESPUÉS DEL SUCCESS)
+        # ================================================================
+
+
+        email_usuario = request.session.get("correo_usuario")
+        if not email_usuario:
+            return redirect("Catalogo")
+
+        usuario = Usuario.objects.get(email=email_usuario)
+
+        total = Decimal(order_result.get("total") or 0)
+        envio = Decimal(shipping_cost or 0)
+
+        comprobante = {
+            "numero": order_result.get("order_number"),
+            "fecha": timezone.now().strftime("%d/%m/%Y %H:%M"),
+            "cliente": {
+                "nombre": f"{shipping_data.get('first_name','')} {shipping_data.get('last_name','')}".strip(),
+                "email": usuario.email,
+                "ci": usuario.ci,
+                "telefono": usuario.tel,
+            },
+            "items": [
+                {
+                    "producto": (line.get("variant") or {}).get("product", {}).get("name", ""),
+                    "talla": (line.get("variant") or {}).get("name", ""),
+                    "cantidad": int(line.get("quantity", 0)),
+                    "total": float(
+                        (line.get("totalPrice") or {}).get("gross", {}).get("amount", 0)
+                    ),
+                }
+                for line in (checkout_data.get("lines") or [])
+            ],
+            "envio": float(envio),
+            "subtotal": float(max(total - envio, Decimal("0.00"))),
+            "total": float(total),
+            "moneda": "USD",
+            "metodo_pago": payment_mode.upper(),
+        }
+
+        # PayPal reference (si aplica)
+        if payment_mode == "paypal" and isinstance(payment_result, dict):
+            if payment_result.get("transaction_id"):
+                comprobante["referencia_pago"] = payment_result["transaction_id"]
+
+        # Guardar en sesión (para vista inmediata)
+        request.session["comprobante_pago"] = comprobante
+        request.session.modified = True
+
+        # Guardar en BD
+        Comprobante.objects.create(
+            ci_usuario=usuario.ci,
+            numero_orden=comprobante["numero"],
+            metodo_pago=comprobante["metodo_pago"],
+            total=total,
+            moneda="USD",
+            data=comprobante,
+        )
+
+        print("✅ Comprobante guardado correctamente")
+
+
 
         # 🔥 Descontar stock REAL en Django (una sola vez) de forma segura
         # Nota: usamos el checkout_data que acabamos de obtener (ya ajustado).
@@ -940,7 +1098,9 @@ def procesar_pago_checkout(request):
             "success": True,
             "order_id": order_result.get("order_id"),
             "order_number": order_result.get("order_number"),
-            "total": order_result.get("total")
+            "total": order_result.get("total"),
+            "open_comprobante": True,
+            "url_comprobante": "/catalogo/comprobante/"
         })
 
     except json.JSONDecodeError:
@@ -983,3 +1143,127 @@ def braintree_token(request):
             {"error": f"Error al generar token: {str(e)}"},
             status=500
         )
+    
+
+def ver_comprobante(request):
+    comprobante = request.session.get("comprobante_pago")
+    if not comprobante:
+        messages.error(request, "No existe un comprobante disponible.")
+        return redirect("Catalogo")  # ajusta si tu url name es otro
+
+    return render(request, "catalogo/comprobante.html", {"comprobante": comprobante})
+
+
+
+def descargar_comprobante_pdf(request):
+    comprobante = request.session.get("comprobante_pago")
+    if not comprobante:
+        messages.error(request, "No existe un comprobante disponible para descargar.")
+        return redirect("Catalogo")
+
+    template = get_template("catalogo/comprobante_pdf.html")
+    html = template.render({"comprobante": comprobante})
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="comprobante_pago.pdf"'
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse("Error generando PDF", status=500)
+
+    return response
+
+@login_required
+def mis_comprobantes(request):
+    from .models import Comprobante
+    from registro.models import Usuario
+
+    email = request.session.get("correo_usuario")
+
+    if not email:
+        return redirect("Catalogo")
+
+    usuario = Usuario.objects.get(email=email)
+
+    comprobantes = Comprobante.objects.filter(ci_usuario=usuario.ci ).order_by("-fecha_creacion") 
+
+    return render(
+        request,
+        "catalogo/mis_comprobantes.html",
+        {"comprobantes": comprobantes}
+    )
+
+
+@login_required
+def detalle_comprobante(request, id_comprobante):
+    from .models import Comprobante
+    from registro.models import Usuario
+
+    email = request.session.get("correo_usuario")
+    usuario = Usuario.objects.get(email=email)
+
+    comprobante = Comprobante.objects.get(
+        id=id_comprobante,
+        ci_usuario=usuario.ci
+    )
+
+    return render(
+        request,
+        "catalogo/comprobante.html",
+        {"comprobante": comprobante}
+    )
+
+def link_callback(uri, rel):
+    """
+    Convierte rutas estáticas/media en rutas absolutas para xhtml2pdf
+    """
+    if uri.startswith('file:///'):
+        return uri.replace('file:///', '')
+
+    if uri.startswith(settings.STATIC_URL):
+        path = os.path.join(settings.BASE_DIR, uri.replace(settings.STATIC_URL, 'static/'))
+        return path
+
+    if uri.startswith(settings.MEDIA_URL):
+        path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ''))
+        return path
+
+    return uri
+
+@login_required
+def descargar_comprobante_pdf_bd(request, id_comprobante):
+    from .models import Comprobante
+    from registro.models import Usuario
+    from django.template.loader import get_template
+    from django.http import HttpResponse
+    from xhtml2pdf import pisa
+
+    logo_path = os.path.join(
+        settings.BASE_DIR,
+        "Tesis",
+        "static",
+        "img",
+        "logooficial.png"
+    )
+
+    logo_path = f"file:///{logo_path.replace(os.sep, '/')}"
+
+    email = request.session.get("correo_usuario")
+    usuario = Usuario.objects.get(email=email)
+
+    comprobante = Comprobante.objects.get(
+        id=id_comprobante,
+        ci_usuario=usuario.ci
+    )
+
+    template = get_template("catalogo/comprobante_pdf.html")
+    html = template.render({"comprobante": comprobante.data, "logo_path": logo_path})
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="comprobante_{comprobante.numero_orden}.pdf"'
+    )
+
+    pisa.CreatePDF(html, dest=response, link_callback=link_callback)
+    return response
+

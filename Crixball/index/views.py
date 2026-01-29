@@ -9,8 +9,9 @@ from django.contrib.auth.hashers import make_password
 from .forms import CambiarContrasenaForm
 from registro.models import Usuario
 from contactos.models import Comentario
+from django.views.decorators.csrf import ensure_csrf_cookie
 
-
+@ensure_csrf_cookie
 def Inicio(request):
     # Contamos la cantidad de usuarios registrados
     from registro.models import Usuario

@@ -115,7 +115,7 @@ class SaleorAPIService:
 
             if "errors" in data:
                 print("❌ Error GraphQL MUTATION:", data["errors"])
-                return None
+                return data
 
             return data.get("data")
         except Exception as e:
@@ -1052,3 +1052,41 @@ class SaleorAPIService:
 
         print("❌ client_token no encontrado en Braintree")
         return None
+
+    def marcar_transaccion_paypal_exitosa(self, transaction_id, psp_reference, amount):
+        mutation = """
+        mutation TxEventPayPal(
+        $id: ID!,
+        $type: TransactionEventTypeEnum!,
+        $pspReference: String!,
+        $amount: PositiveDecimal!
+        ) {
+        transactionEventReport(
+            id: $id,
+            type: $type,
+            pspReference: $pspReference,
+            amount: $amount
+        ) {
+            transaction {
+            id
+            }
+            errors {
+            field
+            message
+            code
+            }
+        }
+        }
+        """
+
+        variables = {
+            "id": transaction_id,          # TransactionItem ID (Base64)
+            "type": "CHARGE_SUCCESS",
+            "pspReference": psp_reference, # PayPal / Braintree transaction id
+            "amount": float(amount)        # 👈 SOLO EL NÚMERO
+        }
+
+        return self._ejecutar_mutation(mutation, variables)
+
+
+

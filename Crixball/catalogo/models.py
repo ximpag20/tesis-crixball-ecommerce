@@ -1,6 +1,8 @@
 import cloudinary
 from django.db import models
 from cloudinary.models import CloudinaryField
+from registro.models import Usuario
+
 
 class Talla(models.Model):
     id_talla = models.AutoField(primary_key=True)
@@ -103,3 +105,21 @@ class Favorito(models.Model):
         unique_together = ('usuario', 'producto')  # Evitar duplicados
         db_table = 'favorito'
 
+
+class Comprobante(models.Model):
+    ci_usuario = models.CharField(max_length=10)  # ← referencia lógica
+    numero_orden = models.CharField(max_length=50)
+    metodo_pago = models.CharField(max_length=30)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    moneda = models.CharField(max_length=10, default="USD")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    # Guardamos el JSON COMPLETO del comprobante
+    data = models.JSONField()
+
+    class Meta:
+        db_table = "comprobante"
+        ordering = ["-fecha_creacion"]
+
+    def __str__(self):
+        return f"Comprobante #{self.numero_orden} - {self.usuario}"

@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    color: #000;
+  }
+
+  .header-table {
+    width: 100%;
+    border-bottom: 3px solid #1f4fd8;
+  }
+
+  .logo {
+    width: 120px;
+  }
+
+  .empresa {
+    text-align: right;
+    font-size: 11px;
+  }
+
+  .titulo {
+    background-color: #1f4fd8;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    padding: 6px;
+    margin-top: 10px;
+  }
+
+  .box {
+    border: 1px solid #000;
+    padding: 6px;
+    margin-top: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+
+  th {
+    background-color: #e6e6e6;
+    border: 1px solid #000;
+    padding: 5px;
+    text-align: center;
+  }
+
+  td {
+    border: 1px solid #000;
+    padding: 5px;
+  }
+
+  .right {
+    text-align: right;
+  }
+
+  .footer {
+    margin-top: 15px;
+    font-size: 10px;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<table class="header-table">
+  <tr>
+    <td>
+      <img src="{{ logo_path }}" style="width:140px;">
+    </td>
+    <td class="empresa">
+      <strong>Confecciones Textiles Crixball</strong><br>
+      Ecuador<br>
+      Tel: 0999999999<br>
+      Email: ventas@crixball.com
+    </td>
+  </tr>
+</table>
+
+<div class="titulo">
+  COMPROBANTE DE PAGO
+</div>
+
+<!-- DATOS COMPROBANTE -->
+<div class="box">
+  <strong>N° Orden:</strong> {{ comprobante.numero }}<br>
+  <strong>Fecha:</strong> {{ comprobante.fecha }}<br>
+  <strong>Método de pago:</strong> {{ comprobante.metodo_pago }}
+</div>
+
+<!-- CLIENTE -->
+<div class="box">
+  <strong>Cliente</strong><br>
+  Nombre: {{ comprobante.cliente.nombre }}<br>
+  Email: {{ comprobante.cliente.email }}<br>
+  CI: {{ comprobante.cliente.ci }}<br>
+  Teléfono: {{ comprobante.cliente.telefono }}
+</div>
+
+<!-- DETALLE -->
+<table>
+  <tr>
+    <th>Producto</th>
+    <th>Talla</th>
+    <th>Cantidad</th>
+    <th>Total</th>
+  </tr>
+  {% for item in comprobante.items %}
+  <tr>
+    <td>{{ item.producto }}</td>
+    <td class="right">{{ item.talla }}</td>
+    <td class="right">{{ item.cantidad }}</td>
+    <td class="right">${{ item.total }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<!-- TOTALES -->
+<table>
+  <tr>
+    <td class="right"><strong>Subtotal</strong></td>
+    <td class="right">${{ comprobante.subtotal }}</td>
+  </tr>
+  <tr>
+    <td class="right"><strong>Envío</strong></td>
+    <td class="right">${{ comprobante.envio }}</td>
+  </tr>
+  <tr>
+    <td class="right"><strong>Total</strong></td>
+    <td class="right"><strong>${{ comprobante.total }} {{ comprobante.moneda }}</strong></td>
+  </tr>
+</table>
+
+<div class="footer">
+  Este documento es un comprobante electrónico generado por el sistema Crixball.
+</div>
+
+</body>
+</html>

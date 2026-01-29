@@ -1431,6 +1431,12 @@ async function procesarPago() {
 
         localStorage.removeItem("checkout_shipping_data");
 
+        // 🔥 ABRIR COMPROBANTE EN NUEVA PESTAÑA
+        if (result.open_comprobante && result.url_comprobante) {
+            showToast("✨ Compra completada con éxito","success");
+        }
+
+
     } catch(err){
         console.error("❌ ERR",err);
         btnCompleteOrder.disabled=false;

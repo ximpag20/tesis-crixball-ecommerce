@@ -1,0 +1,38 @@
+{% extends "header.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Mis comprobantes</h2>
+
+    {% if comprobantes %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>N° Orden</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in comprobantes %}
+                <tr>
+                    <td>{{ c.numero_orden }}</td>
+                    <td>{{ c.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                    <td>{{ c.total }} {{ c.moneda }}</td>
+                    <td>
+                        <a href="{% url 'comprobante_pdf_bd' c.id %}"
+   class="btn btn-sm btn-success">
+   Descargar PDF
+</a>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No tienes comprobantes registrados.</p>
+    {% endif %}
+</div>
+{% endblock %}

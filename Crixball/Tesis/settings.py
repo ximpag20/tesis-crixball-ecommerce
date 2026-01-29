@@ -43,7 +43,8 @@ else:
         'localhost', 
         '127.0.0.1',
         '*.ngrok-free.app',  # Permite cualquier subdominio de ngrok
-        '*.ngrok.io',        # Para URLs de ngrok anteriores
+        '*.ngrok.io',  
+        'kubernetes.docker.internal',      # Para URLs de ngrok anteriores
     ]
     
     # Si tienes una URL específica de ngrok, agrégala aquí

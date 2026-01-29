@@ -418,7 +418,8 @@ class SaleorUserService:
             cursor.execute("""
                 UPDATE account_user 
                 SET password = %s, 
-                    is_confirmed = TRUE
+                    is_confirmed = TRUE,
+                    is_active = TRUE
                 WHERE email = %s
             """, (password_hash, email))
             
